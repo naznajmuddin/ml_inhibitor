@@ -1,0 +1,63 @@
+
+# Feature Documentation
+
+## Original Features
+- `paper_id`: Source paper identifier
+- `inhibitor_name`: Name of the corrosion inhibitor
+- `inhibitor_scientific`: Scientific name of plant/compound
+- `steel_grade`: Type of steel tested
+- `acid`: Type of acid (H2SO4)
+- `acid_molarity_M`: Acid concentration in molarity
+- `temperature_C`: Test temperature in Celsius
+- `immersion_time_h`: Immersion time in hours
+- `inhibitor_conc_mg_L`: Inhibitor concentration in mg/L
+- `method`: Experimental method (e.g., Weight Loss, EIS)
+- `inhibition_efficiency_pct`: Target variable (0-100%)
+
+## Engineered Features
+- `log_conc_mg_L`: Log10 of inhibitor concentration
+  - Rationale: Many adsorption isotherms are log-linear
+  - Range: log10(0.001) to log10(max_concentration)
+
+- `temp_conc_interaction`: Temperature × Concentration / 1000
+  - Rationale: Temperature effects vary with concentration
+  - Captures physisorption vs chemisorption behavior
+
+- `acid_strength_norm`: Acid molarity normalized to 0.5M
+  - Rationale: Standardizes across different acid concentrations
+  - Value: acid_molarity_M / 0.5
+
+- `is_blank`: Binary indicator for control samples
+  - 1 if inhibitor_name contains "Blank"
+  - 0 otherwise
+
+- `immersion_time_bin`: Categorical time bins
+  - "short": 0-6 hours
+  - "medium": 6-24 hours
+  - "long": >24 hours
+
+- `surface_coverage`: IE% / 100
+  - Theoretical surface coverage (θ)
+
+- `ln_Kads`: Natural log of adsorption equilibrium constant
+  - Only calculated for IE < 95% (avoid saturation)
+  - Based on Langmuir isotherm: Kads = θ/(C*(1-θ))
+  - Can be used as alternative target variable
+
+## Feature Usage Recommendations
+
+**For Standard IE% Prediction:**
+- Use: All numeric + categorical features
+- Target: `inhibition_efficiency_pct`
+
+**For Adsorption Modeling:**
+- Use: log_conc_mg_L, temperature_C, temp_conc_interaction
+- Target: `ln_Kads` (for samples where available)
+
+**For Concentration-Response Curves:**
+- Vary: `inhibitor_conc_mg_L` or `log_conc_mg_L`
+- Fix: temperature_C, acid_molarity_M, steel_grade, method
+
+**Temperature Studies:**
+- Vary: `temperature_C`
+- Include: `temp_conc_interaction` to capture non-linear effects
