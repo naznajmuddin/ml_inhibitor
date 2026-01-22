@@ -1,0 +1,11 @@
+inhibitor_name,acid_molarity_M,temperature_C,immersion_time_h,inhibitor_conc_mg_L,method
+Curry leaf extract,2.0,25,1,1000,Weight loss
+Curry leaf extract,2.0,25,1,2000,Weight loss
+Curry leaf extract,2.0,25,1,3000,Weight loss
+Curry leaf extract,2.0,25,6,2000,PDP
+Curry leaf extract,2.0,25,6,3000,PDP
+Peanut shell extract,0.5,25,12,300,Weight loss
+Peanut shell extract,0.5,30,12,300,Weight loss
+Peanut shell extract,0.5,40,12,300,Weight loss
+Spinach leaf extract,0.1,25,24,500,Weight loss
+Spinach leaf extract,0.1,25,168,500,Weight loss

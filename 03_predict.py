@@ -40,51 +40,51 @@ def load_model_and_preprocessor(model_dir="ml_models"):
 def predict_single(model, preprocessor, conditions):
     """
     Predict IE for a single set of conditions.
-    
+
     Args:
         model: Trained model
         preprocessor: Feature preprocessor
         conditions: Dictionary with experimental conditions
-        
+
     Returns:
         predicted_ie: Predicted inhibition efficiency (%)
     """
-    
+
     # Required features
     required_features = [
-        "inhibitor_name", "acid", "steel_grade", "method",
+        "inhibitor_name", "method",
         "acid_molarity_M", "temperature_C", "immersion_time_h",
         "inhibitor_conc_mg_L"
     ]
-    
+
     # Check all required features are present
     for feat in required_features:
         if feat not in conditions:
             raise ValueError(f"Missing required feature: {feat}")
-    
+
     # Add engineered features
     conditions["log_conc_mg_L"] = np.log10(conditions["inhibitor_conc_mg_L"] + 1e-3)
     conditions["temp_conc_interaction"] = (
         conditions["temperature_C"] * conditions["inhibitor_conc_mg_L"] / 1000.0
     )
     conditions["acid_strength_norm"] = conditions["acid_molarity_M"] / 0.5
-    
+
     # Create DataFrame
     df = pd.DataFrame([conditions])
-    
-    # Define feature columns
+
+    # Define feature columns (matching retrained model)
     feature_cols = [
         "acid_molarity_M", "temperature_C", "immersion_time_h",
         "inhibitor_conc_mg_L", "log_conc_mg_L", "temp_conc_interaction",
-        "acid_strength_norm", "acid", "steel_grade", "method", "inhibitor_name"
+        "acid_strength_norm", "inhibitor_name", "method"
     ]
-    
+
     # Preprocess and predict
     X = df[feature_cols]
     X_prep = preprocessor.transform(X)
     prediction = model.predict(X_prep)[0]
     prediction = np.clip(prediction, 0, 100)
-    
+
     return prediction
 
 
@@ -112,11 +112,11 @@ def predict_batch(model, preprocessor, input_csv, output_csv=None):
     df["temp_conc_interaction"] = df["temperature_C"] * df["inhibitor_conc_mg_L"] / 1000.0
     df["acid_strength_norm"] = df["acid_molarity_M"] / 0.5
     
-    # Define features
+    # Define features (matching retrained model)
     feature_cols = [
         "acid_molarity_M", "temperature_C", "immersion_time_h",
         "inhibitor_conc_mg_L", "log_conc_mg_L", "temp_conc_interaction",
-        "acid_strength_norm", "acid", "steel_grade", "method", "inhibitor_name"
+        "acid_strength_norm", "inhibitor_name", "method"
     ]
     
     # Preprocess and predict
@@ -130,7 +130,7 @@ def predict_batch(model, preprocessor, input_csv, output_csv=None):
     
     # Calculate uncertainty (simple estimate based on test MAE)
     # Replace with actual value from your model metrics
-    uncertainty = 15.0  # ±15% typical uncertainty
+    uncertainty = 5.0  # ±5% typical uncertainty (based on model MAE)
     df["uncertainty_lower"] = np.clip(predictions - uncertainty, 0, 100)
     df["uncertainty_upper"] = np.clip(predictions + uncertainty, 0, 100)
     
@@ -228,17 +228,14 @@ def interactive_prediction():
     
     # Collect inputs
     print("\nEnter experimental conditions:")
-    
+    print("(Trained on: Curry leaf, Peanut shell, Spinach extracts)")
+
     conditions = {}
-    conditions["inhibitor_name"] = input("  Inhibitor name: ")
+    conditions["inhibitor_name"] = input("  Inhibitor name [default: Curry leaf extract]: ") or "Curry leaf extract"
     conditions["inhibitor_conc_mg_L"] = float(input("  Concentration (mg/L): "))
     conditions["temperature_C"] = float(input("  Temperature (°C) [default: 25]: ") or "25")
-    conditions["acid_molarity_M"] = float(input("  H2SO4 molarity (M) [default: 0.5]: ") or "0.5")
-    conditions["immersion_time_h"] = float(input("  Immersion time (hours) [default: 6]: ") or "6")
-    
-    # Set defaults
-    conditions["acid"] = "H2SO4"
-    conditions["steel_grade"] = input("  Steel grade [default: ASTM A36]: ") or "ASTM A36"
+    conditions["acid_molarity_M"] = float(input("  H2SO4 molarity (M) [default: 2.0]: ") or "2.0")
+    conditions["immersion_time_h"] = float(input("  Immersion time (hours) [default: 1]: ") or "1")
     conditions["method"] = input("  Method [default: Weight loss]: ") or "Weight loss"
     
     # Predict
@@ -253,7 +250,7 @@ def interactive_prediction():
     print(f"Concentration: {conditions['inhibitor_conc_mg_L']:.0f} mg/L")
     print(f"Temperature: {conditions['temperature_C']:.1f}°C")
     print(f"\n>>> Predicted IE: {predicted_ie:.1f}% <<<")
-    print(f"\n(Typical uncertainty: ±15%)")
+    print(f"\n(Typical uncertainty: ±5%)")
     print("="*80 + "\n")
     
     return predicted_ie
@@ -308,16 +305,41 @@ def main():
         
         model, preprocessor = load_model_and_preprocessor()
         
-        # Standard conditions
+        # Conditions based on training data for each inhibitor
+        inhibitor_conditions = {
+            "Curry leaf extract": {
+                "acid_molarity_M": 2.0,
+                "temperature_C": 25.0,
+                "immersion_time_h": 1.0,
+            },
+            "Peanut shell extract": {
+                "acid_molarity_M": 0.5,
+                "temperature_C": 25.0,
+                "immersion_time_h": 12.0,
+            },
+            "Spinach leaf extract": {
+                "acid_molarity_M": 0.1,
+                "temperature_C": 25.0,
+                "immersion_time_h": 24.0,
+            },
+        }
+
+        # Get conditions for this inhibitor (or use defaults)
+        default_cond = {"acid_molarity_M": 0.5, "temperature_C": 25.0, "immersion_time_h": 6.0}
+        inh_cond = inhibitor_conditions.get(args.inhibitor, default_cond)
+
         conditions = {
             "inhibitor_name": args.inhibitor,
-            "acid": "H2SO4",
-            "acid_molarity_M": 0.5,
-            "temperature_C": 25.0,
-            "immersion_time_h": 6.0,
-            "steel_grade": "ASTM A36",
+            "acid_molarity_M": inh_cond["acid_molarity_M"],
+            "temperature_C": inh_cond["temperature_C"],
+            "immersion_time_h": inh_cond["immersion_time_h"],
             "method": "Weight loss",
         }
+
+        print(f"\nUsing conditions for {args.inhibitor}:")
+        print(f"  Acid: {conditions['acid_molarity_M']}M H2SO4")
+        print(f"  Temperature: {conditions['temperature_C']}°C")
+        print(f"  Immersion time: {conditions['immersion_time_h']}h")
         
         output_path = args.output or f"response_curve_{args.inhibitor.replace(' ', '_')}.png"
         

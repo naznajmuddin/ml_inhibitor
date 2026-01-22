@@ -75,10 +75,8 @@ FEATURE_COLS_NUM = [
 ]
 
 FEATURE_COLS_CAT = [
-    "acid",
-    "steel_grade",
-    "method",
     "inhibitor_name",
+    "method",
 ]
 
 TARGET_IE = "inhibition_efficiency_pct"

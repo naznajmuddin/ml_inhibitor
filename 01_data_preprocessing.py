@@ -44,14 +44,14 @@ def load_raw_data(filepath="corrosion_inhibitors_literature_expanded.csv"):
 
 def filter_experimental_conditions(df):
     """
-    Filter to H2SO4 and mild steel/carbon steel as per your research focus.
+    Filter to focused dataset: 3 plant extracts with weight loss method.
     """
     print("\n🔍 Filtering experimental conditions...")
-    
+
     # Filter to H2SO4
     df_filtered = df[df["acid"].str.upper() == "H2SO4"].copy()
     print(f"   ✓ H2SO4 only: {len(df_filtered)} rows")
-    
+
     # Filter to mild steel / carbon steel / ASTM A36
     steel_pattern = "ASTM A36|mild steel|carbon steel|Q235"
     df_filtered = df_filtered[
@@ -60,11 +60,22 @@ def filter_experimental_conditions(df):
         )
     ].copy()
     print(f"   ✓ Mild/carbon steel only: {len(df_filtered)} rows")
-    
+
     # Keep only rows with IE data
     df_filtered = df_filtered[df_filtered["inhibition_efficiency_pct"].notna()].copy()
     print(f"   ✓ With IE% data: {len(df_filtered)} rows")
-    
+
+    # FOCUSED MODEL: Filter to 3 plant extracts only
+    target_inhibitors = ["Curry leaf extract", "Peanut shell extract", "Spinach leaf extract"]
+    df_filtered = df_filtered[df_filtered["inhibitor_name"].isin(target_inhibitors)].copy()
+    print(f"   ✓ 3 target inhibitors only: {len(df_filtered)} rows")
+
+    # FOCUSED MODEL: Filter to weight loss and PDP methods only
+    df_filtered = df_filtered[
+        df_filtered["method"].str.contains("Weight loss|Weight Loss|WL|PDP", case=False, na=False, regex=True)
+    ].copy()
+    print(f"   ✓ Weight loss + PDP methods: {len(df_filtered)} rows")
+
     return df_filtered
 
 

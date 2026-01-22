@@ -3,60 +3,60 @@
 CORROSION INHIBITOR ML TRAINING - FINAL REPORT
 ================================================================================
 
-Date: 2026-01-04 09:19:11
-Best Model: Ensemble
+Date: 2026-01-21 22:10:59
+Best Model: Ridge
 
 ================================================================================
 1. MODEL PERFORMANCE SUMMARY
 ================================================================================
 
 Final Test Set Performance:
-  R² Score:  -1.0244
-  MAE:       29.37%
-  RMSE:      30.93%
+  R² Score:  0.9346
+  MAE:       5.09%
+  RMSE:      6.08%
 
 Validation Performance:
-  R² Score:  0.4878
-  MAE:       16.00%
-  RMSE:      18.09%
+  R² Score:  -19.4875
+  MAE:       16.94%
+  RMSE:      17.97%
 
 Cross-Validation (5-fold, grouped):
-  Mean R²:   -0.0509
-  Std R²:    0.3178
+  Mean R²:   0.1674
+  Std R²:    0.1981
 
 ================================================================================
 2. ALL MODELS COMPARISON
 ================================================================================
 
 
-Ensemble:
-  Val R²: 0.4878  |  Val MAE: 16.00%  |  CV R²: -0.0509 ± 0.3178
-RandomForest:
-  Val R²: 0.4280  |  Val MAE: 14.48%  |  CV R²: -0.4415 ± 0.7137
-GradientBoosting:
-  Val R²: 0.3804  |  Val MAE: 16.92%  |  CV R²: 0.0526 ± 0.3350
 Ridge:
-  Val R²: 0.3790  |  Val MAE: 13.93%  |  CV R²: 0.0791 ± 0.5159
+  Val R²: -19.4875  |  Val MAE: 16.94%  |  CV R²: 0.1674 ± 0.1981
 HistGradientBoosting:
-  Val R²: 0.2924  |  Val MAE: 17.63%  |  CV R²: -0.1790 ± 0.4818
+  Val R²: -108.5478  |  Val MAE: 41.36%  |  CV R²: -0.0017 ± 0.0001
+GradientBoosting:
+  Val R²: -111.7324  |  Val MAE: 41.96%  |  CV R²: -0.0085 ± 0.0042
+Ensemble:
+  Val R²: -112.2778  |  Val MAE: 42.06%  |  CV R²: -0.0029 ± 0.0000
+RandomForest:
+  Val R²: -116.6267  |  Val MAE: 42.87%  |  CV R²: -0.0015 ± 0.0014
 SVR:
-  Val R²: -0.2471  |  Val MAE: 25.45%  |  CV R²: 0.1605 ± 0.3666
+  Val R²: -148.3348  |  Val MAE: 48.37%  |  CV R²: -0.1152 ± 0.0990
 
 ================================================================================
 3. TOP FEATURES (by Importance)
 ================================================================================
 
 
- 4. inhibitor_conc_mg_L                   0.690 ± 0.139
- 5. log_conc_mg_L                         0.157 ± 0.037
- 6. temp_conc_interaction                 0.002 ± 0.022
- 3. immersion_time_h                      0.000 ± 0.000
-10. steel_grade_Q235 carbon steel         0.000 ± 0.000
-21. inhibitor_name_Peanut shell extract   0.000 ± 0.000
-11. steel_grade_carbon steel              0.000 ± 0.000
+ 1. acid_molarity_M                       0.000 ± 0.000
  2. temperature_C                         0.000 ± 0.000
-14. method_Weight loss                    0.000 ± 0.000
-18. inhibitor_name_Chromolaena odorata ethanol leaf extract (LECO)   0.000 ± 0.000
+ 4. inhibitor_conc_mg_L                   0.000 ± 0.000
+ 5. log_conc_mg_L                         0.000 ± 0.000
+ 6. temp_conc_interaction                 0.000 ± 0.000
+ 7. acid_strength_norm                    0.000 ± 0.000
+ 8. inhibitor_name_Curry leaf extract     0.000 ± 0.000
+ 9. inhibitor_name_Peanut shell extract   0.000 ± 0.000
+10. method_PDP                            0.000 ± 0.000
+11. method_Weight loss                    0.000 ± 0.000
 
 ================================================================================
 4. KEY INSIGHTS FROM LITERATURE IMPLEMENTATION
@@ -75,8 +75,8 @@ SVR:
 ================================================================================
 
 Model Uncertainty (based on cross-validation):
-  Mean absolute error: ± 31.8% (standard deviation)
-  Expected prediction range: ± 29.4% (MAE on test set)
+  Mean absolute error: ± 19.8% (standard deviation)
+  Expected prediction range: ± 5.1% (MAE on test set)
 
 This uncertainty should be reported alongside all predictions.
 
@@ -95,7 +95,7 @@ This uncertainty should be reported alongside all predictions.
    - IE% > 95% (saturation effects)
 
 3. Always report:
-   - Prediction ± 29.4% uncertainty
+   - Prediction ± 5.1% uncertainty
    - Whether prediction is interpolation or extrapolation
    - Confidence intervals when possible
 
