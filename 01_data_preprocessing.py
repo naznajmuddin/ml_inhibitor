@@ -36,9 +36,9 @@ print("="*70)
 
 def load_raw_data(filepath="corrosion_inhibitors_literature_expanded.csv"):
     """Load raw data from CSV."""
-    print(f"\n📂 Loading data from: {filepath}")
+    print(f"\n[INFO] Loading data from: {filepath}")
     df = pd.read_csv(filepath)
-    print(f"   ✓ Loaded {len(df)} rows, {len(df.columns)} columns")
+    print(f"   OK: Loaded {len(df)} rows, {len(df.columns)} columns")
     return df
 
 
@@ -46,11 +46,11 @@ def filter_experimental_conditions(df):
     """
     Filter to focused dataset: 3 plant extracts with weight loss method.
     """
-    print("\n🔍 Filtering experimental conditions...")
+    print("\n[INFO] Filtering experimental conditions...")
 
     # Filter to H2SO4
     df_filtered = df[df["acid"].str.upper() == "H2SO4"].copy()
-    print(f"   ✓ H2SO4 only: {len(df_filtered)} rows")
+    print(f"   OK: H2SO4 only: {len(df_filtered)} rows")
 
     # Filter to mild steel / carbon steel / ASTM A36
     steel_pattern = "ASTM A36|mild steel|carbon steel|Q235"
@@ -59,22 +59,22 @@ def filter_experimental_conditions(df):
             steel_pattern, case=False, na=False, regex=True
         )
     ].copy()
-    print(f"   ✓ Mild/carbon steel only: {len(df_filtered)} rows")
+    print(f"   OK: Mild/carbon steel only: {len(df_filtered)} rows")
 
     # Keep only rows with IE data
     df_filtered = df_filtered[df_filtered["inhibition_efficiency_pct"].notna()].copy()
-    print(f"   ✓ With IE% data: {len(df_filtered)} rows")
+    print(f"   OK: With IE% data: {len(df_filtered)} rows")
 
     # FOCUSED MODEL: Filter to 3 plant extracts only
     target_inhibitors = ["Curry leaf extract", "Peanut shell extract", "Spinach leaf extract"]
     df_filtered = df_filtered[df_filtered["inhibitor_name"].isin(target_inhibitors)].copy()
-    print(f"   ✓ 3 target inhibitors only: {len(df_filtered)} rows")
+    print(f"   OK: 3 target inhibitors only: {len(df_filtered)} rows")
 
     # FOCUSED MODEL: Filter to weight loss and PDP methods only
     df_filtered = df_filtered[
         df_filtered["method"].str.contains("Weight loss|Weight Loss|WL|PDP", case=False, na=False, regex=True)
     ].copy()
-    print(f"   ✓ Weight loss + PDP methods: {len(df_filtered)} rows")
+    print(f"   OK: Weight loss + PDP methods: {len(df_filtered)} rows")
 
     return df_filtered
 
@@ -89,14 +89,14 @@ def add_engineered_features(df):
     3. acid_strength - Normalized acid molarity
     4. is_blank - Binary indicator for blank/control samples
     """
-    print("\n🔧 Engineering features...")
+    print("\n[INFO] Engineering features...")
     
     df_eng = df.copy()
     
     # 1. Log concentration (handle zeros by adding small epsilon)
     epsilon = 1e-3  # 0.001 mg/L
     df_eng["log_conc_mg_L"] = np.log10(df_eng["inhibitor_conc_mg_L"] + epsilon)
-    print("   ✓ Added: log_conc_mg_L")
+    print("   OK: Added: log_conc_mg_L")
     
     # 2. Temperature-concentration interaction
     # Fill missing temperatures with median before interaction
@@ -105,18 +105,18 @@ def add_engineered_features(df):
     df_eng["temp_conc_interaction"] = (
         df_eng["temp_filled"] * df_eng["inhibitor_conc_mg_L"] / 1000.0  # Scale down
     )
-    print("   ✓ Added: temp_conc_interaction")
+    print("   OK: Added: temp_conc_interaction")
     
     # 3. Acid strength (normalized molarity)
     # Most common is 0.5M, normalize to this
     df_eng["acid_strength_norm"] = df_eng["acid_molarity_M"] / 0.5
-    print("   ✓ Added: acid_strength_norm")
+    print("   OK: Added: acid_strength_norm")
     
     # 4. Is blank indicator
     df_eng["is_blank"] = (
         df_eng["inhibitor_name"].str.contains("Blank|blank", case=False, na=False)
     ).astype(int)
-    print("   ✓ Added: is_blank")
+    print("   OK: Added: is_blank")
     
     # 5. Immersion time bins (short/medium/long)
     df_eng["immersion_time_bin"] = pd.cut(
@@ -125,10 +125,10 @@ def add_engineered_features(df):
         labels=["short", "medium", "long"],
         include_lowest=True
     )
-    print("   ✓ Added: immersion_time_bin")
+    print("   OK: Added: immersion_time_bin")
     
     # 6. Calculate theoretical ln(Kads) where possible
-    # Based on IE% and concentration: θ = IE/100, then Kads = θ/(C*(1-θ))
+    # Based on IE% and concentration: theta = IE/100, then Kads = theta/(C*(1-theta))
     # Only for non-saturated IE (< 95%)
     df_eng["surface_coverage"] = df_eng["inhibition_efficiency_pct"] / 100.0
     
@@ -138,7 +138,7 @@ def add_engineered_features(df):
     
     Kads = theta / (C_molar * (1 - theta + 1e-6))  # Avoid division by zero
     df_eng.loc[mask, "ln_Kads"] = np.log(Kads)
-    print("   ✓ Added: ln_Kads (for IE < 95%)")
+    print("   OK: Added: ln_Kads (for IE < 95%)")
     
     print(f"\n   Total features now: {len(df_eng.columns)}")
     return df_eng
@@ -148,7 +148,7 @@ def check_data_quality(df):
     """
     Perform data quality checks and report issues.
     """
-    print("\n📊 Data Quality Report:")
+    print("\n[INFO] Data Quality Report:")
     print("-" * 70)
     
     # Missing values
@@ -161,17 +161,17 @@ def check_data_quality(df):
     missing_df = missing_df[missing_df["Missing"] > 0].sort_values("Missing", ascending=False)
     
     if len(missing_df) > 0:
-        print("\n⚠️  Missing Values:")
+        print("\n[WARN] Missing Values:")
         print(missing_df.to_string())
     else:
-        print("\n✓ No missing values!")
+        print("\nOK: No missing values!")
     
     # IE% range check
     ie_min, ie_max = df["inhibition_efficiency_pct"].min(), df["inhibition_efficiency_pct"].max()
-    print(f"\n📈 IE% range: {ie_min:.2f}% to {ie_max:.2f}%")
+    print(f"\n[INFO] IE% range: {ie_min:.2f}% to {ie_max:.2f}%")
     
     if ie_min < 0 or ie_max > 100:
-        print("   ⚠️  WARNING: IE% values outside [0, 100] range!")
+        print("   WARN: IE% values outside [0, 100] range!")
     
     # Check for duplicate experiments
     duplicates = df.duplicated(
@@ -179,14 +179,14 @@ def check_data_quality(df):
                 "inhibitor_conc_mg_L", "immersion_time_h"],
         keep=False
     ).sum()
-    print(f"\n🔄 Potential duplicate experiments: {duplicates}")
+    print(f"\n[INFO] Potential duplicate experiments: {duplicates}")
     
     # Distribution of inhibitors
-    print(f"\n🧪 Number of unique inhibitors: {df['inhibitor_name'].nunique()}")
+    print(f"\n[INFO] Number of unique inhibitors: {df['inhibitor_name'].nunique()}")
     print(f"   Papers: {df['paper_id'].nunique()}")
     
     # Concentration distribution
-    print(f"\n💧 Concentration range: {df['inhibitor_conc_mg_L'].min():.0f} to {df['inhibitor_conc_mg_L'].max():.0f} mg/L")
+    print(f"\n[INFO] Concentration range: {df['inhibitor_conc_mg_L'].min():.0f} to {df['inhibitor_conc_mg_L'].max():.0f} mg/L")
     
     return missing_df
 
@@ -195,7 +195,7 @@ def detect_outliers(df, column="inhibition_efficiency_pct"):
     """
     Detect potential outliers using IQR method.
     """
-    print(f"\n🎯 Outlier Detection for '{column}':")
+    print(f"\n[INFO] Outlier Detection for '{column}':")
     
     Q1 = df[column].quantile(0.25)
     Q3 = df[column].quantile(0.75)
@@ -219,7 +219,7 @@ def create_train_test_split(df, test_size=0.2, val_size=0.1):
     
     Groups by paper_id to avoid data leakage.
     """
-    print(f"\n📊 Creating train/val/test splits...")
+    print("\n[INFO] Creating train/val/test splits...")
     print(f"   Test size: {test_size*100:.0f}%")
     print(f"   Validation size: {val_size*100:.0f}%")
     
@@ -238,9 +238,9 @@ def create_train_test_split(df, test_size=0.2, val_size=0.1):
     df_train = df_train_val.iloc[train_idx].copy()
     df_val = df_train_val.iloc[val_idx].copy()
     
-    print(f"\n   ✓ Train set: {len(df_train)} samples ({len(df_train['paper_id'].unique())} papers)")
-    print(f"   ✓ Val set:   {len(df_val)} samples ({len(df_val['paper_id'].unique())} papers)")
-    print(f"   ✓ Test set:  {len(df_test)} samples ({len(df_test['paper_id'].unique())} papers)")
+    print(f"\n   OK: Train set: {len(df_train)} samples ({len(df_train['paper_id'].unique())} papers)")
+    print(f"   OK: Val set:   {len(df_val)} samples ({len(df_val['paper_id'].unique())} papers)")
+    print(f"   OK: Test set:  {len(df_test)} samples ({len(df_test['paper_id'].unique())} papers)")
     
     # Check for group leakage
     train_papers = set(df_train["paper_id"].unique())
@@ -248,13 +248,13 @@ def create_train_test_split(df, test_size=0.2, val_size=0.1):
     test_papers = set(df_test["paper_id"].unique())
     
     if len(train_papers & test_papers) > 0:
-        print("   ⚠️  WARNING: Paper leakage between train and test!")
+        print("   WARN: Paper leakage between train and test!")
     if len(train_papers & val_papers) > 0:
-        print("   ⚠️  WARNING: Paper leakage between train and val!")
+        print("   WARN: Paper leakage between train and val!")
     if len(val_papers & test_papers) > 0:
-        print("   ⚠️  WARNING: Paper leakage between val and test!")
+        print("   WARN: Paper leakage between val and test!")
     else:
-        print("   ✓ No group leakage detected!")
+        print("   OK: No group leakage detected!")
     
     return df_train, df_val, df_test
 
@@ -263,7 +263,7 @@ def visualize_data_distribution(df):
     """
     Create visualization of data distributions.
     """
-    print("\n📊 Creating data distribution visualizations...")
+    print("\n[INFO] Creating data distribution visualizations...")
     
     fig, axes = plt.subplots(2, 3, figsize=(15, 10))
     fig.suptitle("Data Distribution Analysis", fontsize=16, fontweight="bold")
@@ -290,7 +290,7 @@ def visualize_data_distribution(df):
     ax = axes[0, 2]
     temp_data = df["temperature_C"].dropna()
     ax.hist(temp_data, bins=20, edgecolor="black", alpha=0.7, color="orange")
-    ax.set_xlabel("Temperature (°C)")
+    ax.set_xlabel("Temperature (deg C)")
     ax.set_ylabel("Frequency")
     ax.set_title("Temperature Distribution")
     
@@ -332,28 +332,28 @@ def visualize_data_distribution(df):
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close()
     
-    print(f"   ✓ Saved: {output_path}")
+    print(f"   OK: Saved: {output_path}")
 
 
 def save_datasets(df_train, df_val, df_test, df_full):
     """
     Save processed datasets to CSV files.
     """
-    print("\n💾 Saving processed datasets...")
+    print("\n[INFO] Saving processed datasets...")
     
     # Save splits
     df_train.to_csv(OUTPUT_DIR / "train_data.csv", index=False)
-    print(f"   ✓ train_data.csv ({len(df_train)} rows)")
+    print(f"   OK: train_data.csv ({len(df_train)} rows)")
     
     df_val.to_csv(OUTPUT_DIR / "val_data.csv", index=False)
-    print(f"   ✓ val_data.csv ({len(df_val)} rows)")
+    print(f"   OK: val_data.csv ({len(df_val)} rows)")
     
     df_test.to_csv(OUTPUT_DIR / "test_data.csv", index=False)
-    print(f"   ✓ test_data.csv ({len(df_test)} rows)")
+    print(f"   OK: test_data.csv ({len(df_test)} rows)")
     
     # Save full processed dataset
     df_full.to_csv(OUTPUT_DIR / "full_processed_data.csv", index=False)
-    print(f"   ✓ full_processed_data.csv ({len(df_full)} rows)")
+    print(f"   OK: full_processed_data.csv ({len(df_full)} rows)")
     
     # Create a feature documentation file
     feature_docs = """
@@ -377,7 +377,7 @@ def save_datasets(df_train, df_val, df_test, df_full):
   - Rationale: Many adsorption isotherms are log-linear
   - Range: log10(0.001) to log10(max_concentration)
 
-- `temp_conc_interaction`: Temperature × Concentration / 1000
+- `temp_conc_interaction`: Temperature x Concentration / 1000
   - Rationale: Temperature effects vary with concentration
   - Captures physisorption vs chemisorption behavior
 
@@ -395,11 +395,11 @@ def save_datasets(df_train, df_val, df_test, df_full):
   - "long": >24 hours
 
 - `surface_coverage`: IE% / 100
-  - Theoretical surface coverage (θ)
+  - Theoretical surface coverage (theta)
 
 - `ln_Kads`: Natural log of adsorption equilibrium constant
   - Only calculated for IE < 95% (avoid saturation)
-  - Based on Langmuir isotherm: Kads = θ/(C*(1-θ))
+  - Based on Langmuir isotherm: Kads = theta/(C*(1-theta))
   - Can be used as alternative target variable
 
 ## Feature Usage Recommendations
@@ -423,14 +423,14 @@ def save_datasets(df_train, df_val, df_test, df_full):
     
     with open(OUTPUT_DIR / "FEATURE_DOCUMENTATION.txt", "w") as f:
         f.write(feature_docs)
-    print(f"   ✓ FEATURE_DOCUMENTATION.txt")
+    print("   OK: FEATURE_DOCUMENTATION.txt")
 
 
 def create_summary_report(df_full, df_train, df_val, df_test):
     """
     Create a summary report of the preprocessing.
     """
-    print("\n📄 Creating summary report...")
+    print("\n[INFO] Creating summary report...")
     
     report = f"""
 {'='*70}
@@ -466,8 +466,8 @@ Inhibition Efficiency (%):
 
 Distribution:
   IE < 50%:    {(df_full['inhibition_efficiency_pct'] < 50).sum()} samples ({100*(df_full['inhibition_efficiency_pct'] < 50).sum()/len(df_full):.1f}%)
-  50% ≤ IE < 80%: {((df_full['inhibition_efficiency_pct'] >= 50) & (df_full['inhibition_efficiency_pct'] < 80)).sum()} samples ({100*((df_full['inhibition_efficiency_pct'] >= 50) & (df_full['inhibition_efficiency_pct'] < 80)).sum()/len(df_full):.1f}%)
-  IE ≥ 80%:    {(df_full['inhibition_efficiency_pct'] >= 80).sum()} samples ({100*(df_full['inhibition_efficiency_pct'] >= 80).sum()/len(df_full):.1f}%)
+  50% <= IE < 80%: {((df_full['inhibition_efficiency_pct'] >= 50) & (df_full['inhibition_efficiency_pct'] < 80)).sum()} samples ({100*((df_full['inhibition_efficiency_pct'] >= 50) & (df_full['inhibition_efficiency_pct'] < 80)).sum()/len(df_full):.1f}%)
+  IE >= 80%:    {(df_full['inhibition_efficiency_pct'] >= 80).sum()} samples ({100*(df_full['inhibition_efficiency_pct'] >= 80).sum()/len(df_full):.1f}%)
 
 {'='*70}
 3. FEATURE RANGES
@@ -479,9 +479,9 @@ Inhibitor Concentration:
   Median: {df_full['inhibitor_conc_mg_L'].median():.1f} mg/L
 
 Temperature:
-  Min:    {df_full['temperature_C'].min():.1f}°C
-  Max:    {df_full['temperature_C'].max():.1f}°C
-  Median: {df_full['temperature_C'].median():.1f}°C
+  Min:    {df_full['temperature_C'].min():.1f} deg C
+  Max:    {df_full['temperature_C'].max():.1f} deg C
+  Median: {df_full['temperature_C'].median():.1f} deg C
 
 Acid Molarity:
   Min:    {df_full['acid_molarity_M'].min():.2f} M
@@ -527,7 +527,7 @@ Top 10 by Mean IE%:
     ).sort_values("mean", ascending=False).head(10)
     
     for idx, (inhibitor, row) in enumerate(top_inhibitors.iterrows(), 1):
-        report += f"\n{idx:2d}. {inhibitor[:50]:<50s}  {row['mean']:5.1f}% ± {row['std']:4.1f}% (n={int(row['count'])})"
+        report += f"\n{idx:2d}. {inhibitor[:50]:<50s}  {row['mean']:5.1f}% +/- {row['std']:4.1f}% (n={int(row['count'])})"
     
     report += f"""
 
@@ -535,12 +535,12 @@ Top 10 by Mean IE%:
 6. ENGINEERED FEATURES ADDED
 {'='*70}
 
-✓ log_conc_mg_L          - Log-transformed concentration
-✓ temp_conc_interaction  - Temperature × Concentration interaction
-✓ acid_strength_norm     - Normalized acid molarity
-✓ is_blank               - Binary blank indicator
-✓ immersion_time_bin     - Categorical time bins
-✓ ln_Kads                - Adsorption constant (where IE < 95%)
+- log_conc_mg_L          - Log-transformed concentration
+- temp_conc_interaction  - Temperature x Concentration interaction
+- acid_strength_norm     - Normalized acid molarity
+- is_blank               - Binary blank indicator
+- immersion_time_bin     - Categorical time bins
+- ln_Kads                - Adsorption constant (where IE < 95%)
 
 See FEATURE_DOCUMENTATION.txt for detailed descriptions.
 
@@ -548,11 +548,11 @@ See FEATURE_DOCUMENTATION.txt for detailed descriptions.
 7. DATA QUALITY NOTES
 {'='*70}
 
-✓ Filtered to H2SO4 environment only
-✓ Filtered to mild/carbon steel only
-✓ Removed rows without IE% data
-✓ Added robust feature engineering
-✓ Group-based train/val/test split (no paper leakage)
+- Filtered to H2SO4 environment only
+- Filtered to mild/carbon steel only
+- Removed rows without IE% data
+- Added robust feature engineering
+- Group-based train/val/test split (no paper leakage)
 
 {'='*70}
 8. NEXT STEPS
@@ -572,7 +572,7 @@ END OF REPORT
     with open(OUTPUT_DIR / "PREPROCESSING_REPORT.txt", "w") as f:
         f.write(report)
     
-    print(f"   ✓ PREPROCESSING_REPORT.txt")
+    print("   OK: PREPROCESSING_REPORT.txt")
     
     # Print to console as well
     print("\n" + report)
@@ -609,17 +609,17 @@ def main():
     create_summary_report(df_engineered, df_train, df_val, df_test)
     
     print("\n" + "="*70)
-    print("✅ PREPROCESSING COMPLETE!")
+    print("PREPROCESSING COMPLETE!")
     print("="*70)
     print(f"\nOutput directory: {OUTPUT_DIR.absolute()}")
     print("\nFiles created:")
-    print("  • train_data.csv - Training dataset")
-    print("  • val_data.csv - Validation dataset")
-    print("  • test_data.csv - Test dataset")
-    print("  • full_processed_data.csv - Complete processed dataset")
-    print("  • data_distribution_analysis.png - Data visualizations")
-    print("  • FEATURE_DOCUMENTATION.txt - Feature descriptions")
-    print("  • PREPROCESSING_REPORT.txt - Detailed summary report")
+    print("  - train_data.csv - Training dataset")
+    print("  - val_data.csv - Validation dataset")
+    print("  - test_data.csv - Test dataset")
+    print("  - full_processed_data.csv - Complete processed dataset")
+    print("  - data_distribution_analysis.png - Data visualizations")
+    print("  - FEATURE_DOCUMENTATION.txt - Feature descriptions")
+    print("  - PREPROCESSING_REPORT.txt - Detailed summary report")
     print("\n" + "="*70 + "\n")
 
 
