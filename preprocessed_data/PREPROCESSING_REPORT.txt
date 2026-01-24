@@ -3,37 +3,42 @@
 DATA PREPROCESSING SUMMARY REPORT
 ======================================================================
 
-Dataset: Corrosion Inhibitors in H2SO4 Environment
-Date: 2026-01-23 08:07:13
+Dataset: Corrosion Inhibitors in Acidic Environments (H2SO4, HCl)
+Target Inhibitors: Curry leaf, Peanut shell, Aloe vera
+Date: 2026-01-24 11:00:08
 
 ======================================================================
 1. DATA OVERVIEW
 ======================================================================
 
-Total samples (after filtering): 36
+Total samples (after filtering): 86
 Unique inhibitors: 3
-Unique papers: 4
+Unique papers: 6
 
 Experimental Conditions:
-- Acid: H2SO4 only
+- Acids: H2SO4, HCl
 - Steel: Mild/carbon steel, ASTM A36, Q235
-- Method: Weight loss, PDP
+- Methods: Weight loss, PDP, EIS
+
+Data by Acid Type:
+- H2SO4: 40 rows
+- HCl: 46 rows
 
 ======================================================================
 2. TARGET VARIABLE STATISTICS
 ======================================================================
 
 Inhibition Efficiency (%):
-  Mean:   53.20%
-  Median: 62.56%
-  Std:    32.28%
-  Min:    0.00%
+  Mean:   58.05%
+  Median: 66.00%
+  Std:    33.47%
+  Min:    -56.10%
   Max:    99.95%
 
 Distribution:
-  IE < 50%:    10 samples (27.8%)
-  50% ≤ IE < 80%: 16 samples (44.4%)
-  IE ≥ 80%:    10 samples (27.8%)
+  IE < 50%:    23 samples (26.7%)
+  50% <= IE < 80%: 35 samples (40.7%)
+  IE >= 80%:    28 samples (32.6%)
 
 ======================================================================
 3. FEATURE RANGES
@@ -42,41 +47,41 @@ Distribution:
 Inhibitor Concentration:
   Min:    0.0 mg/L
   Max:    3000.0 mg/L
-  Median: 500.0 mg/L
+  Median: 200.0 mg/L
 
 Temperature:
-  Min:    25.0°C
-  Max:    40.0°C
-  Median: 25.0°C
+  Min:    25.0 deg C
+  Max:    65.0 deg C
+  Median: 35.0 deg C
 
 Acid Molarity:
-  Min:    0.10 M
-  Max:    2.00 M
-  Median: 2.00 M
+  Min:    0.50 M
+  Max:    2.50 M
+  Median: 1.00 M
 
 Immersion Time:
-  Min:    1.0 hours
+  Min:    0.5 hours
   Max:    168.0 hours
-  Median: 5.5 hours
+  Median: 3.0 hours
 
 ======================================================================
 4. TRAIN/VAL/TEST SPLIT
 ======================================================================
 
 Training Set:
-  Samples: 11 (30.6%)
-  Papers:  2
-  Inhibitors: 2
+  Samples: 59 (68.6%)
+  Papers:  6
+  Inhibitors: 3
 
 Validation Set:
-  Samples: 7 (19.4%)
-  Papers:  1
-  Inhibitors: 1
+  Samples: 9 (10.5%)
+  Papers:  3
+  Inhibitors: 3
 
 Test Set:
-  Samples: 18 (50.0%)
-  Papers:  1
-  Inhibitors: 1
+  Samples: 18 (20.9%)
+  Papers:  6
+  Inhibitors: 3
 
 Split Strategy: GroupShuffleSplit by paper_id (prevents data leakage)
 
@@ -86,40 +91,50 @@ Split Strategy: GroupShuffleSplit by paper_id (prevents data leakage)
 
 Top 10 by Mean IE%:
 
- 1. Spinach leaf extract                                 81.8% ±  4.3% (n=7)
- 2. Curry leaf extract                                   48.7% ± 28.0% (n=21)
- 3. Peanut shell extract                                 40.0% ± 43.2% (n=8)
+ 1. Aloe vera extract                                    66.4% +/- 26.5% (n=41)
+ 2. Curry leaf extract                                   50.7% +/- 36.3% (n=32)
+ 3. Peanut shell extract                                 49.8% +/- 41.7% (n=13)
 
 ======================================================================
 6. ENGINEERED FEATURES ADDED
 ======================================================================
 
-✓ log_conc_mg_L          - Log-transformed concentration
-✓ temp_conc_interaction  - Temperature × Concentration interaction
-✓ acid_strength_norm     - Normalized acid molarity
-✓ is_blank               - Binary blank indicator
-✓ immersion_time_bin     - Categorical time bins
-✓ ln_Kads                - Adsorption constant (where IE < 95%)
+- log_conc_mg_L          - Log-transformed concentration
+- temp_conc_interaction  - Temperature x Concentration interaction
+- acid_strength_norm     - Normalized acid molarity
+- is_blank               - Binary blank indicator
+- immersion_time_bin     - Categorical time bins
+- ln_Kads                - Adsorption constant (where IE < 95%)
 
 See FEATURE_DOCUMENTATION.txt for detailed descriptions.
 
 ======================================================================
-7. DATA QUALITY NOTES
+7. ELECTROCHEMICAL DATA SUMMARY
 ======================================================================
 
-✓ Filtered to H2SO4 environment only
-✓ Filtered to mild/carbon steel only
-✓ Removed rows without IE% data
-✓ Added robust feature engineering
-✓ Group-based train/val/test split (no paper leakage)
+Rows with Ecorr data: 24
+Rows with Icorr data: 24
+Rows with Tafel slopes: 20
 
 ======================================================================
-8. NEXT STEPS
+8. DATA QUALITY NOTES
+======================================================================
+
+- Supports H2SO4 and HCl acidic environments
+- Filtered to mild/carbon steel only
+- Target inhibitors: Curry leaf, Peanut shell, Aloe vera
+- Removed rows without IE% data
+- Added robust feature engineering including acid_type_encoded
+- Group-based train/val/test split (no paper leakage)
+
+======================================================================
+9. NEXT STEPS
 ======================================================================
 
 1. Review the data distribution visualization (data_distribution_analysis.png)
 2. Run the ML training script (02_ml_training_enhanced.py)
-3. Consider virtual sample generation if needed (for small dataset augmentation)
+   - Trains separate models for IE%, Ecorr, Icorr
+3. Generate polarization curves (04_polarization_curves.py)
 4. Experiment with both IE% and ln_Kads as target variables
 
 ======================================================================

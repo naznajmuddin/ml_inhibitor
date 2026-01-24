@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Graphs | Corrosion Inhibitor Predictor</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <nav class="top-nav">
+          <a class="nav-link" href="/">Predict</a>
+          <a class="nav-link" href="/data">Dataset</a>
+          <a class="nav-link" href="/graphs">Graphs</a>
+        </nav>
+        <p class="badge">Visualization Gallery</p>
+        <h1>Generated Graphs</h1>
+        <p class="subhead">
+          Visualizations generated from the polarization curve analysis and study graphs.
+        </p>
+      </header>
+
+      <main class="content single">
+        <section class="card">
+          <div class="card-header">
+            <h2>Polarization curves</h2>
+            <a class="secondary" href="/data">View dataset</a>
+          </div>
+          {% if polarization_items %}
+          <div class="gallery">
+            {% for item in polarization_items %}
+            <figure class="zoomable" data-title="{{ item.title }}" data-src="{{ item.url }}">
+              <img src="{{ item.url }}" alt="{{ item.title }}" loading="lazy" />
+              <figcaption>{{ item.title }}</figcaption>
+            </figure>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="muted">No polarization curve images found.</p>
+          {% endif %}
+        </section>
+
+        <section class="card">
+          <h2>Study graphs</h2>
+          {% if study_items %}
+          <div class="gallery">
+            {% for item in study_items %}
+            <figure class="zoomable" data-title="{{ item.title }}" data-src="{{ item.url }}">
+              <img src="{{ item.url }}" alt="{{ item.title }}" loading="lazy" />
+              <figcaption>{{ item.title }}</figcaption>
+            </figure>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="muted">No study graphs found.</p>
+          {% endif %}
+        </section>
+
+        <section class="card">
+          <h2>Graph data tables</h2>
+          <p class="muted">
+            Each table mirrors the values used to generate the graphs in 06_graphs.py.
+          </p>
+          {% for table in graph_tables %}
+          <details class="data-section">
+            <summary>{{ table.title }}</summary>
+            {% if table.error %}
+            <div class="alert">
+              <p>{{ table.error }}</p>
+            </div>
+            {% else %}
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    {% for column in table.columns %}
+                    <th>{{ column }}</th>
+                    {% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in table.rows %}
+                  <tr>
+                    {% for value in row %}
+                    <td>{{ value }}</td>
+                    {% endfor %}
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% endif %}
+          </details>
+          {% endfor %}
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>Generated figures from `04_polarization_curves.py` and `06_graphs.py`.</p>
+      </footer>
+    </div>
+
+    <div class="modal" id="image-modal" aria-hidden="true">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <button class="modal-close" type="button" aria-label="Close">&times;</button>
+        <h3 id="modal-title"></h3>
+        <img id="modal-image" alt="" />
+      </div>
+    </div>
+
+    <script>
+      const modal = document.getElementById("image-modal");
+      const modalTitle = document.getElementById("modal-title");
+      const modalImage = document.getElementById("modal-image");
+      const closeButton = modal.querySelector(".modal-close");
+      const backdrop = modal.querySelector(".modal-backdrop");
+
+      function openModal(title, src) {
+        modalTitle.textContent = title || "Graph preview";
+        modalImage.src = src;
+        modalImage.alt = title || "Graph preview";
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+      }
+
+      function closeModal() {
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden", "true");
+        modalImage.src = "";
+      }
+
+      document.querySelectorAll(".zoomable").forEach((figure) => {
+        figure.addEventListener("click", () => {
+          openModal(figure.dataset.title, figure.dataset.src);
+        });
+      });
+
+      closeButton.addEventListener("click", closeModal);
+      backdrop.addEventListener("click", closeModal);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          closeModal();
+        }
+      });
+    </script>
+  </body>
+</html>

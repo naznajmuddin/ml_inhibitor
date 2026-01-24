@@ -3,23 +3,29 @@
 
 ## Original Features
 - `paper_id`: Source paper identifier
-- `inhibitor_name`: Name of the corrosion inhibitor
+- `inhibitor_name`: Name of the corrosion inhibitor (Curry leaf, Peanut shell, Aloe vera)
 - `inhibitor_scientific`: Scientific name of plant/compound
-- `steel_grade`: Type of steel tested
-- `acid`: Type of acid (H2SO4)
+- `steel_grade`: Type of steel tested (ASTM A36, mild steel, carbon steel, Q235)
+- `acid`: Type of acid (H2SO4, HCl)
 - `acid_molarity_M`: Acid concentration in molarity
 - `temperature_C`: Test temperature in Celsius
 - `immersion_time_h`: Immersion time in hours
 - `inhibitor_conc_mg_L`: Inhibitor concentration in mg/L
-- `method`: Experimental method (e.g., Weight Loss, EIS)
-- `inhibition_efficiency_pct`: Target variable (0-100%)
+- `method`: Experimental method (Weight Loss, EIS, PDP)
+
+## Target Variables (Multi-target)
+- `inhibition_efficiency_pct`: Primary target (0-100%)
+- `Ecorr_mV`: Corrosion potential (mV vs SCE)
+- `Icorr_uA_cm2`: Corrosion current density (uA/cm2)
+- `ba_mV_dec`: Anodic Tafel slope (mV/decade)
+- `bc_mV_dec`: Cathodic Tafel slope (mV/decade)
 
 ## Engineered Features
 - `log_conc_mg_L`: Log10 of inhibitor concentration
   - Rationale: Many adsorption isotherms are log-linear
   - Range: log10(0.001) to log10(max_concentration)
 
-- `temp_conc_interaction`: Temperature × Concentration / 1000
+- `temp_conc_interaction`: Temperature x Concentration / 1000
   - Rationale: Temperature effects vary with concentration
   - Captures physisorption vs chemisorption behavior
 
@@ -27,8 +33,12 @@
   - Rationale: Standardizes across different acid concentrations
   - Value: acid_molarity_M / 0.5
 
+- `acid_type_encoded`: Numeric encoding for acid type (NEW)
+  - H2SO4 = 0, HCl = 1, HNO3 = 2
+  - Allows model to learn acid-specific behavior
+
 - `is_blank`: Binary indicator for control samples
-  - 1 if inhibitor_name contains "Blank"
+  - 1 if inhibitor_conc_mg_L == 0
   - 0 otherwise
 
 - `immersion_time_bin`: Categorical time bins
@@ -37,11 +47,11 @@
   - "long": >24 hours
 
 - `surface_coverage`: IE% / 100
-  - Theoretical surface coverage (θ)
+  - Theoretical surface coverage (theta)
 
 - `ln_Kads`: Natural log of adsorption equilibrium constant
   - Only calculated for IE < 95% (avoid saturation)
-  - Based on Langmuir isotherm: Kads = θ/(C*(1-θ))
+  - Based on Langmuir isotherm: Kads = theta/(C*(1-theta))
   - Can be used as alternative target variable
 
 ## Feature Usage Recommendations
@@ -50,13 +60,22 @@
 - Use: All numeric + categorical features
 - Target: `inhibition_efficiency_pct`
 
+**For Ecorr/Icorr Prediction:**
+- Use: Same features as IE%
+- Targets: `Ecorr_mV`, `Icorr_uA_cm2`
+- Note: Only rows with electrochemical data can be used
+
+**For Polarization Curve Generation:**
+- Requires: `Ecorr_mV`, `Icorr_uA_cm2`, `ba_mV_dec`, `bc_mV_dec`
+- Use Tafel equation to generate curves
+
 **For Adsorption Modeling:**
 - Use: log_conc_mg_L, temperature_C, temp_conc_interaction
 - Target: `ln_Kads` (for samples where available)
 
 **For Concentration-Response Curves:**
 - Vary: `inhibitor_conc_mg_L` or `log_conc_mg_L`
-- Fix: temperature_C, acid_molarity_M, steel_grade, method
+- Fix: temperature_C, acid_molarity_M, steel_grade, method, acid
 
 **Temperature Studies:**
 - Vary: `temperature_C`

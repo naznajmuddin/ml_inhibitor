@@ -4,6 +4,12 @@
 Enhanced Data Preprocessing for Corrosion Inhibitor ML
 ======================================================
 
+Multi-target prediction system for green corrosion inhibitors:
+- Targets: IE%, Ecorr, Icorr, Weight loss
+- Inhibitors: Curry leaf, Peanut shell, Aloe vera
+- Acids: H2SO4, HCl (acidic environments)
+- Substrate: Mild/carbon steel
+
 Based on literature best practices:
 - Feature engineering (log concentration, interactions)
 - Data quality checks
@@ -13,7 +19,7 @@ Based on literature best practices:
 References:
 - Akrom et al. (2023) - Gradient Boosting for natural inhibitors
 - Ma et al. (2023) - Concentration as feature importance
-- Chemoinformatics review (2024) - IE% saturation issues
+- Singh et al. (2016) - Aloe vera in HCl (J. Ind. Eng. Chem.)
 """
 
 import numpy as np
@@ -34,25 +40,43 @@ print("ENHANCED DATA PREPROCESSING FOR CORROSION INHIBITOR ML")
 print("="*70)
 
 
-def load_raw_data(filepath="corrosion_inhibitors_literature_expanded.csv"):
-    """Load raw data from CSV."""
+def to_ascii(text: str) -> str:
+    return text.encode("ascii", "ignore").decode("ascii")
+
+
+def load_raw_data(filepath="corrosion_inhibitors_expanded_v2.csv"):
+    """Load raw data from CSV with expanded schema."""
     print(f"\n[INFO] Loading data from: {filepath}")
     df = pd.read_csv(filepath)
     print(f"   OK: Loaded {len(df)} rows, {len(df.columns)} columns")
+
+    # Display available columns
+    print(f"   Columns: {list(df.columns)}")
+
+    # Summary of data
+    print(f"\n   Inhibitors: {df['inhibitor_name'].unique().tolist()}")
+    print(f"   Acids: {df['acid'].unique().tolist()}")
+    print(f"   Methods: {df['method'].unique().tolist()}")
+
     return df
 
 
 def filter_experimental_conditions(df):
     """
-    Filter to focused dataset: 3 plant extracts with weight loss method.
+    Filter to focused dataset: 3 plant extracts in acidic environments.
+
+    Target inhibitors: Curry leaf, Peanut shell, Aloe vera
+    Supported acids: H2SO4, HCl
+    Supported steel: mild steel, carbon steel, ASTM A36, Q235
     """
     print("\n[INFO] Filtering experimental conditions...")
 
-    # Filter to H2SO4
-    df_filtered = df[df["acid"].str.upper() == "H2SO4"].copy()
-    print(f"   OK: H2SO4 only: {len(df_filtered)} rows")
+    # Filter to supported acids (H2SO4 and HCl)
+    supported_acids = ["H2SO4", "HCL"]
+    df_filtered = df[df["acid"].str.upper().isin(supported_acids)].copy()
+    print(f"   OK: Supported acids (H2SO4, HCl): {len(df_filtered)} rows")
 
-    # Filter to mild steel / carbon steel / ASTM A36
+    # Filter to mild steel / carbon steel / ASTM A36 / Q235
     steel_pattern = "ASTM A36|mild steel|carbon steel|Q235"
     df_filtered = df_filtered[
         df_filtered["steel_grade"].str.contains(
@@ -65,16 +89,26 @@ def filter_experimental_conditions(df):
     df_filtered = df_filtered[df_filtered["inhibition_efficiency_pct"].notna()].copy()
     print(f"   OK: With IE% data: {len(df_filtered)} rows")
 
-    # FOCUSED MODEL: Filter to 3 plant extracts only
-    target_inhibitors = ["Curry leaf extract", "Peanut shell extract", "Spinach leaf extract"]
+    # FOCUSED MODEL: Filter to 3 target plant extracts
+    target_inhibitors = ["Curry leaf extract", "Peanut shell extract", "Aloe vera extract"]
     df_filtered = df_filtered[df_filtered["inhibitor_name"].isin(target_inhibitors)].copy()
     print(f"   OK: 3 target inhibitors only: {len(df_filtered)} rows")
 
-    # FOCUSED MODEL: Filter to weight loss and PDP methods only
+    # Show breakdown by inhibitor
+    for inh in target_inhibitors:
+        count = len(df_filtered[df_filtered["inhibitor_name"] == inh])
+        print(f"       - {inh}: {count} rows")
+
+    # Filter to weight loss, PDP, and EIS methods
     df_filtered = df_filtered[
-        df_filtered["method"].str.contains("Weight loss|Weight Loss|WL|PDP", case=False, na=False, regex=True)
+        df_filtered["method"].str.contains("Weight loss|Weight Loss|WL|PDP|EIS", case=False, na=False, regex=True)
     ].copy()
-    print(f"   OK: Weight loss + PDP methods: {len(df_filtered)} rows")
+    print(f"   OK: Weight loss + PDP + EIS methods: {len(df_filtered)} rows")
+
+    # Show breakdown by acid
+    for acid in df_filtered["acid"].unique():
+        count = len(df_filtered[df_filtered["acid"] == acid])
+        print(f"       - {acid}: {count} rows")
 
     return df_filtered
 
@@ -82,22 +116,25 @@ def filter_experimental_conditions(df):
 def add_engineered_features(df):
     """
     Add engineered features based on literature recommendations.
-    
+
     Features added:
     1. log_concentration - Many adsorption isotherms are log-linear
     2. temp_conc_interaction - Temperature affects adsorption differently at different concentrations
     3. acid_strength - Normalized acid molarity
     4. is_blank - Binary indicator for blank/control samples
+    5. immersion_time_bin - Categorical time bins
+    6. ln_Kads - Adsorption constant (for IE < 95%)
+    7. acid_type_encoded - Numeric encoding for acid type (NEW)
     """
     print("\n[INFO] Engineering features...")
-    
+
     df_eng = df.copy()
-    
+
     # 1. Log concentration (handle zeros by adding small epsilon)
     epsilon = 1e-3  # 0.001 mg/L
     df_eng["log_conc_mg_L"] = np.log10(df_eng["inhibitor_conc_mg_L"] + epsilon)
     print("   OK: Added: log_conc_mg_L")
-    
+
     # 2. Temperature-concentration interaction
     # Fill missing temperatures with median before interaction
     temp_median = df_eng["temperature_C"].median()
@@ -106,18 +143,16 @@ def add_engineered_features(df):
         df_eng["temp_filled"] * df_eng["inhibitor_conc_mg_L"] / 1000.0  # Scale down
     )
     print("   OK: Added: temp_conc_interaction")
-    
+
     # 3. Acid strength (normalized molarity)
     # Most common is 0.5M, normalize to this
     df_eng["acid_strength_norm"] = df_eng["acid_molarity_M"] / 0.5
     print("   OK: Added: acid_strength_norm")
-    
-    # 4. Is blank indicator
-    df_eng["is_blank"] = (
-        df_eng["inhibitor_name"].str.contains("Blank|blank", case=False, na=False)
-    ).astype(int)
+
+    # 4. Is blank indicator (concentration = 0)
+    df_eng["is_blank"] = (df_eng["inhibitor_conc_mg_L"] == 0).astype(int)
     print("   OK: Added: is_blank")
-    
+
     # 5. Immersion time bins (short/medium/long)
     df_eng["immersion_time_bin"] = pd.cut(
         df_eng["immersion_time_h"],
@@ -126,20 +161,34 @@ def add_engineered_features(df):
         include_lowest=True
     )
     print("   OK: Added: immersion_time_bin")
-    
+
     # 6. Calculate theoretical ln(Kads) where possible
     # Based on IE% and concentration: theta = IE/100, then Kads = theta/(C*(1-theta))
     # Only for non-saturated IE (< 95%)
     df_eng["surface_coverage"] = df_eng["inhibition_efficiency_pct"] / 100.0
-    
+
     mask = (df_eng["inhibition_efficiency_pct"] < 95) & (df_eng["inhibitor_conc_mg_L"] > 0)
     C_molar = df_eng.loc[mask, "inhibitor_conc_mg_L"] / 1e6  # Very rough approximation
     theta = df_eng.loc[mask, "surface_coverage"]
-    
+
     Kads = theta / (C_molar * (1 - theta + 1e-6))  # Avoid division by zero
     df_eng.loc[mask, "ln_Kads"] = np.log(Kads)
     print("   OK: Added: ln_Kads (for IE < 95%)")
-    
+
+    # 7. Acid type encoding (NEW for multi-acid support)
+    acid_encoding = {"H2SO4": 0, "HCl": 1, "HNO3": 2}
+    df_eng["acid_type_encoded"] = df_eng["acid"].map(acid_encoding).fillna(0).astype(int)
+    print("   OK: Added: acid_type_encoded")
+
+    # 8. Check for electrochemical data availability
+    has_ecorr = df_eng["Ecorr_mV"].notna().sum()
+    has_icorr = df_eng["Icorr_uA_cm2"].notna().sum()
+    has_tafel = df_eng["ba_mV_dec"].notna().sum()
+    print(f"\n   Electrochemical data availability:")
+    print(f"       - Ecorr data: {has_ecorr} rows")
+    print(f"       - Icorr data: {has_icorr} rows")
+    print(f"       - Tafel slopes (ba, bc): {has_tafel} rows")
+
     print(f"\n   Total features now: {len(df_eng.columns)}")
     return df_eng
 
@@ -150,7 +199,7 @@ def check_data_quality(df):
     """
     print("\n[INFO] Data Quality Report:")
     print("-" * 70)
-    
+
     # Missing values
     missing = df.isnull().sum()
     missing_pct = 100 * missing / len(df)
@@ -159,35 +208,57 @@ def check_data_quality(df):
         "Percent": missing_pct
     })
     missing_df = missing_df[missing_df["Missing"] > 0].sort_values("Missing", ascending=False)
-    
+
     if len(missing_df) > 0:
         print("\n[WARN] Missing Values:")
         print(missing_df.to_string())
     else:
         print("\nOK: No missing values!")
-    
+
     # IE% range check
     ie_min, ie_max = df["inhibition_efficiency_pct"].min(), df["inhibition_efficiency_pct"].max()
     print(f"\n[INFO] IE% range: {ie_min:.2f}% to {ie_max:.2f}%")
-    
+
     if ie_min < 0 or ie_max > 100:
         print("   WARN: IE% values outside [0, 100] range!")
-    
+
     # Check for duplicate experiments
     duplicates = df.duplicated(
-        subset=["inhibitor_name", "acid_molarity_M", "temperature_C", 
-                "inhibitor_conc_mg_L", "immersion_time_h"],
+        subset=["inhibitor_name", "acid_molarity_M", "temperature_C",
+                "inhibitor_conc_mg_L", "immersion_time_h", "method"],
         keep=False
     ).sum()
     print(f"\n[INFO] Potential duplicate experiments: {duplicates}")
-    
+
     # Distribution of inhibitors
     print(f"\n[INFO] Number of unique inhibitors: {df['inhibitor_name'].nunique()}")
     print(f"   Papers: {df['paper_id'].nunique()}")
-    
+
     # Concentration distribution
     print(f"\n[INFO] Concentration range: {df['inhibitor_conc_mg_L'].min():.0f} to {df['inhibitor_conc_mg_L'].max():.0f} mg/L")
-    
+
+    # Electrochemical data summary (NEW)
+    print("\n[INFO] Electrochemical Data Summary:")
+    if "Ecorr_mV" in df.columns:
+        ecorr_valid = df["Ecorr_mV"].notna()
+        if ecorr_valid.sum() > 0:
+            print(f"   Ecorr range: {df.loc[ecorr_valid, 'Ecorr_mV'].min():.1f} to {df.loc[ecorr_valid, 'Ecorr_mV'].max():.1f} mV")
+        else:
+            print("   Ecorr: No data available")
+
+    if "Icorr_uA_cm2" in df.columns:
+        icorr_valid = df["Icorr_uA_cm2"].notna()
+        if icorr_valid.sum() > 0:
+            print(f"   Icorr range: {df.loc[icorr_valid, 'Icorr_uA_cm2'].min():.3f} to {df.loc[icorr_valid, 'Icorr_uA_cm2'].max():.1f} uA/cm2")
+        else:
+            print("   Icorr: No data available")
+
+    # Acid distribution (NEW)
+    print("\n[INFO] Data by Acid Type:")
+    for acid in df["acid"].unique():
+        count = len(df[df["acid"] == acid])
+        print(f"   {acid}: {count} rows ({100*count/len(df):.1f}%)")
+
     return missing_df
 
 
@@ -213,49 +284,60 @@ def detect_outliers(df, column="inhibition_efficiency_pct"):
     return outliers
 
 
-def create_train_test_split(df, test_size=0.2, val_size=0.1):
+def create_train_test_split(df, test_size=0.2, val_size=0.1, stratify_by="inhibitor_name"):
     """
-    Create train/validation/test splits with group-based splitting.
-    
-    Groups by paper_id to avoid data leakage.
+    Create train/validation/test splits with stratified sampling.
+
+    Stratifies by inhibitor_name to ensure all inhibitors are represented
+    in each split, which improves model generalization.
+
+    Args:
+        df: Input DataFrame
+        test_size: Fraction for test set (default 0.2)
+        val_size: Fraction for validation set (default 0.1)
+        stratify_by: Column to stratify by (default "inhibitor_name")
     """
+    from sklearn.model_selection import train_test_split
+
     print("\n[INFO] Creating train/val/test splits...")
     print(f"   Test size: {test_size*100:.0f}%")
     print(f"   Validation size: {val_size*100:.0f}%")
-    
-    # First split: train+val vs test
-    gss_test = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=RANDOM_STATE)
-    train_val_idx, test_idx = next(gss_test.split(df, groups=df["paper_id"]))
-    
-    df_train_val = df.iloc[train_val_idx].copy()
-    df_test = df.iloc[test_idx].copy()
-    
-    # Second split: train vs val
+    print(f"   Stratified by: {stratify_by}")
+
+    # First split: train+val vs test (stratified by inhibitor)
+    df_train_val, df_test = train_test_split(
+        df,
+        test_size=test_size,
+        random_state=RANDOM_STATE,
+        stratify=df[stratify_by]
+    )
+
+    # Second split: train vs val (stratified by inhibitor)
     val_size_adjusted = val_size / (1 - test_size)
-    gss_val = GroupShuffleSplit(n_splits=1, test_size=val_size_adjusted, random_state=RANDOM_STATE)
-    train_idx, val_idx = next(gss_val.split(df_train_val, groups=df_train_val["paper_id"]))
-    
-    df_train = df_train_val.iloc[train_idx].copy()
-    df_val = df_train_val.iloc[val_idx].copy()
-    
+    df_train, df_val = train_test_split(
+        df_train_val,
+        test_size=val_size_adjusted,
+        random_state=RANDOM_STATE,
+        stratify=df_train_val[stratify_by]
+    )
+
     print(f"\n   OK: Train set: {len(df_train)} samples ({len(df_train['paper_id'].unique())} papers)")
     print(f"   OK: Val set:   {len(df_val)} samples ({len(df_val['paper_id'].unique())} papers)")
     print(f"   OK: Test set:  {len(df_test)} samples ({len(df_test['paper_id'].unique())} papers)")
-    
-    # Check for group leakage
-    train_papers = set(df_train["paper_id"].unique())
-    val_papers = set(df_val["paper_id"].unique())
-    test_papers = set(df_test["paper_id"].unique())
-    
-    if len(train_papers & test_papers) > 0:
-        print("   WARN: Paper leakage between train and test!")
-    if len(train_papers & val_papers) > 0:
-        print("   WARN: Paper leakage between train and val!")
-    if len(val_papers & test_papers) > 0:
-        print("   WARN: Paper leakage between val and test!")
-    else:
-        print("   OK: No group leakage detected!")
-    
+
+    # Show inhibitor distribution in each split
+    print("\n   Inhibitor distribution:")
+    for name, split_df in [("Train", df_train), ("Val", df_val), ("Test", df_test)]:
+        inhibitor_counts = split_df["inhibitor_name"].value_counts()
+        print(f"     {name}: {dict(inhibitor_counts)}")
+
+    # Check for electrochemical data in each split
+    print("\n   Electrochemical data (Ecorr/Icorr) distribution:")
+    for name, split_df in [("Train", df_train), ("Val", df_val), ("Test", df_test)]:
+        ecorr_count = split_df["Ecorr_mV"].notna().sum() if "Ecorr_mV" in split_df.columns else 0
+        icorr_count = split_df["Icorr_uA_cm2"].notna().sum() if "Icorr_uA_cm2" in split_df.columns else 0
+        print(f"     {name}: {ecorr_count} Ecorr, {icorr_count} Icorr")
+
     return df_train, df_val, df_test
 
 
@@ -361,16 +443,22 @@ def save_datasets(df_train, df_val, df_test, df_full):
 
 ## Original Features
 - `paper_id`: Source paper identifier
-- `inhibitor_name`: Name of the corrosion inhibitor
+- `inhibitor_name`: Name of the corrosion inhibitor (Curry leaf, Peanut shell, Aloe vera)
 - `inhibitor_scientific`: Scientific name of plant/compound
-- `steel_grade`: Type of steel tested
-- `acid`: Type of acid (H2SO4)
+- `steel_grade`: Type of steel tested (ASTM A36, mild steel, carbon steel, Q235)
+- `acid`: Type of acid (H2SO4, HCl)
 - `acid_molarity_M`: Acid concentration in molarity
 - `temperature_C`: Test temperature in Celsius
 - `immersion_time_h`: Immersion time in hours
 - `inhibitor_conc_mg_L`: Inhibitor concentration in mg/L
-- `method`: Experimental method (e.g., Weight Loss, EIS)
-- `inhibition_efficiency_pct`: Target variable (0-100%)
+- `method`: Experimental method (Weight Loss, EIS, PDP)
+
+## Target Variables (Multi-target)
+- `inhibition_efficiency_pct`: Primary target (0-100%)
+- `Ecorr_mV`: Corrosion potential (mV vs SCE)
+- `Icorr_uA_cm2`: Corrosion current density (uA/cm2)
+- `ba_mV_dec`: Anodic Tafel slope (mV/decade)
+- `bc_mV_dec`: Cathodic Tafel slope (mV/decade)
 
 ## Engineered Features
 - `log_conc_mg_L`: Log10 of inhibitor concentration
@@ -385,8 +473,12 @@ def save_datasets(df_train, df_val, df_test, df_full):
   - Rationale: Standardizes across different acid concentrations
   - Value: acid_molarity_M / 0.5
 
+- `acid_type_encoded`: Numeric encoding for acid type (NEW)
+  - H2SO4 = 0, HCl = 1, HNO3 = 2
+  - Allows model to learn acid-specific behavior
+
 - `is_blank`: Binary indicator for control samples
-  - 1 if inhibitor_name contains "Blank"
+  - 1 if inhibitor_conc_mg_L == 0
   - 0 otherwise
 
 - `immersion_time_bin`: Categorical time bins
@@ -408,20 +500,30 @@ def save_datasets(df_train, df_val, df_test, df_full):
 - Use: All numeric + categorical features
 - Target: `inhibition_efficiency_pct`
 
+**For Ecorr/Icorr Prediction:**
+- Use: Same features as IE%
+- Targets: `Ecorr_mV`, `Icorr_uA_cm2`
+- Note: Only rows with electrochemical data can be used
+
+**For Polarization Curve Generation:**
+- Requires: `Ecorr_mV`, `Icorr_uA_cm2`, `ba_mV_dec`, `bc_mV_dec`
+- Use Tafel equation to generate curves
+
 **For Adsorption Modeling:**
 - Use: log_conc_mg_L, temperature_C, temp_conc_interaction
 - Target: `ln_Kads` (for samples where available)
 
 **For Concentration-Response Curves:**
 - Vary: `inhibitor_conc_mg_L` or `log_conc_mg_L`
-- Fix: temperature_C, acid_molarity_M, steel_grade, method
+- Fix: temperature_C, acid_molarity_M, steel_grade, method, acid
 
 **Temperature Studies:**
 - Vary: `temperature_C`
 - Include: `temp_conc_interaction` to capture non-linear effects
 """
     
-    with open(OUTPUT_DIR / "FEATURE_DOCUMENTATION.txt", "w") as f:
+    feature_docs = to_ascii(feature_docs)
+    with open(OUTPUT_DIR / "FEATURE_DOCUMENTATION.txt", "w", encoding="ascii") as f:
         f.write(feature_docs)
     print("   OK: FEATURE_DOCUMENTATION.txt")
 
@@ -437,7 +539,8 @@ def create_summary_report(df_full, df_train, df_val, df_test):
 DATA PREPROCESSING SUMMARY REPORT
 {'='*70}
 
-Dataset: Corrosion Inhibitors in H2SO4 Environment
+Dataset: Corrosion Inhibitors in Acidic Environments (H2SO4, HCl)
+Target Inhibitors: Curry leaf, Peanut shell, Aloe vera
 Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 {'='*70}
@@ -449,9 +552,13 @@ Unique inhibitors: {df_full['inhibitor_name'].nunique()}
 Unique papers: {df_full['paper_id'].nunique()}
 
 Experimental Conditions:
-- Acid: H2SO4 only
+- Acids: {', '.join(df_full['acid'].unique())}
 - Steel: Mild/carbon steel, ASTM A36, Q235
-- Method: {', '.join(df_full['method'].unique())}
+- Methods: {', '.join(df_full['method'].unique())}
+
+Data by Acid Type:
+- H2SO4: {len(df_full[df_full['acid'] == 'H2SO4'])} rows
+- HCl: {len(df_full[df_full['acid'] == 'HCl'])} rows
 
 {'='*70}
 2. TARGET VARIABLE STATISTICS
@@ -545,22 +652,32 @@ Top 10 by Mean IE%:
 See FEATURE_DOCUMENTATION.txt for detailed descriptions.
 
 {'='*70}
-7. DATA QUALITY NOTES
+7. ELECTROCHEMICAL DATA SUMMARY
 {'='*70}
 
-- Filtered to H2SO4 environment only
+Rows with Ecorr data: {df_full['Ecorr_mV'].notna().sum() if 'Ecorr_mV' in df_full.columns else 0}
+Rows with Icorr data: {df_full['Icorr_uA_cm2'].notna().sum() if 'Icorr_uA_cm2' in df_full.columns else 0}
+Rows with Tafel slopes: {df_full['ba_mV_dec'].notna().sum() if 'ba_mV_dec' in df_full.columns else 0}
+
+{'='*70}
+8. DATA QUALITY NOTES
+{'='*70}
+
+- Supports H2SO4 and HCl acidic environments
 - Filtered to mild/carbon steel only
+- Target inhibitors: Curry leaf, Peanut shell, Aloe vera
 - Removed rows without IE% data
-- Added robust feature engineering
+- Added robust feature engineering including acid_type_encoded
 - Group-based train/val/test split (no paper leakage)
 
 {'='*70}
-8. NEXT STEPS
+9. NEXT STEPS
 {'='*70}
 
 1. Review the data distribution visualization (data_distribution_analysis.png)
 2. Run the ML training script (02_ml_training_enhanced.py)
-3. Consider virtual sample generation if needed (for small dataset augmentation)
+   - Trains separate models for IE%, Ecorr, Icorr
+3. Generate polarization curves (04_polarization_curves.py)
 4. Experiment with both IE% and ln_Kads as target variables
 
 {'='*70}
@@ -569,7 +686,8 @@ END OF REPORT
 """
     
     # Save report
-    with open(OUTPUT_DIR / "PREPROCESSING_REPORT.txt", "w") as f:
+    report = to_ascii(report)
+    with open(OUTPUT_DIR / "PREPROCESSING_REPORT.txt", "w", encoding="ascii") as f:
         f.write(report)
     
     print("   OK: PREPROCESSING_REPORT.txt")

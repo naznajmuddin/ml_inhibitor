@@ -1,0 +1,87 @@
+paper_id,inhibitor_name,inhibitor_scientific,steel_grade,acid,acid_molarity_M,temperature_C,immersion_time_h,inhibitor_conc_mg_L,method,corrosion_rate_value,corrosion_rate_unit,inhibition_efficiency_pct,Ecorr_mV,Icorr_uA_cm2,ba_mV_dec,bc_mV_dec,notes
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,1.0,0.0,Weight loss,128.08,mmpy,0.0,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,3.0,0.0,Weight loss,116.51,mmpy,0.0,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,5.0,0.0,Weight loss,113.32,mmpy,0.0,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,1.0,1000.0,Weight loss,58.21,mmpy,54.55,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,3.0,1000.0,Weight loss,57.99,mmpy,50.23,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,5.0,1000.0,Weight loss,57.8,mmpy,48.99,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,1.0,1500.0,Weight loss,53.81,mmpy,57.99,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,3.0,1500.0,Weight loss,56.31,mmpy,51.67,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,5.0,1500.0,Weight loss,55.55,mmpy,50.98,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,1.0,2000.0,Weight loss,43.58,mmpy,65.97,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,3.0,2000.0,Weight loss,54.85,mmpy,52.93,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,5.0,2000.0,Weight loss,54.67,mmpy,51.76,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,1.0,2500.0,Weight loss,37.01,mmpy,71.1,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,3.0,2500.0,Weight loss,39.57,mmpy,66.03,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,5.0,2500.0,Weight loss,42.67,mmpy,62.35,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,1.0,3000.0,Weight loss,25.54,mmpy,80.06,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,3.0,3000.0,Weight loss,35.44,mmpy,69.58,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,5.0,3000.0,Weight loss,42.18,mmpy,62.77,,,,Temperature assumed 25C (room temperature).,
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,6.0,0.0,PDP,,,0.0,-546.67,7.398,,,Electrochemical PDP blank from ElectrochemistryResults.csv.
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,6.0,1000.0,PDP,,,-56.1,-692.25,11.549,,,Electrochemical PDP 10% from ElectrochemistryResults.csv. Negative IE indicates corrosion acceleration.
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,6.0,2000.0,PDP,,,25.27,-261.54,5.528,,,Electrochemical PDP 20% from ElectrochemistryResults.csv.
+CURRY_LEAVE.pdf,Curry leaf extract,Murraya koenigii (L.) Spreng,ASTM A36,H2SO4,2.0,25.0,6.0,3000.0,PDP,,,99.95,228.96,0.00333,,,Electrochemical PDP 30% from ElectrochemistryResults.csv.
+main.pdf,Peanut shell extract,Arachis hypogaea (peanut) shell,Q235 carbon steel,H2SO4,0.5,25.0,12.0,0.0,Weight loss,14.5,g/m2/h,0.0,,,,Weight loss test at 25C for 12h.,
+main.pdf,Peanut shell extract,Arachis hypogaea (peanut) shell,Q235 carbon steel,H2SO4,0.5,25.0,12.0,300.0,Weight loss,1.84,g/m2/h,87.29,,,,Weight loss test at 25C for 12h.,
+main.pdf,Peanut shell extract,Arachis hypogaea (peanut) shell,Q235 carbon steel,H2SO4,0.5,30.0,12.0,0.0,Weight loss,19.5,g/m2/h,0.0,,,,Weight loss test at 30C for 12h.,
+main.pdf,Peanut shell extract,Arachis hypogaea (peanut) shell,Q235 carbon steel,H2SO4,0.5,30.0,12.0,300.0,Weight loss,2.92,g/m2/h,85.07,,,,Weight loss test at 30C for 12h.,
+main.pdf,Peanut shell extract,Arachis hypogaea (peanut) shell,Q235 carbon steel,H2SO4,0.5,35.0,12.0,0.0,Weight loss,24.9,g/m2/h,0.0,,,,Weight loss test at 35C for 12h.,
+main.pdf,Peanut shell extract,Arachis hypogaea (peanut) shell,Q235 carbon steel,H2SO4,0.5,35.0,12.0,300.0,Weight loss,4.75,g/m2/h,80.96,,,,Weight loss test at 35C for 12h.,
+main.pdf,Peanut shell extract,Arachis hypogaea (peanut) shell,Q235 carbon steel,H2SO4,0.5,40.0,12.0,0.0,Weight loss,34.3,g/m2/h,0.0,,,,Weight loss test at 40C for 12h.,
+main.pdf,Peanut shell extract,Arachis hypogaea (peanut) shell,Q235 carbon steel,H2SO4,0.5,40.0,12.0,300.0,Weight loss,11.4,g/m2/h,66.81,,,,Weight loss test at 40C for 12h.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,0.5,0.0,PDP,,,0.0,-469.0,731.0,73.0,127.0,Table 5: Blank in 1M HCl at 308K (35C).
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,0.5,50.0,PDP,,,61.5,-454.0,281.0,84.0,146.0,Table 5: 50ppm in 1M HCl at 308K.
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,0.5,100.0,PDP,,,71.3,-476.0,210.0,68.0,130.0,Table 5: 100ppm in 1M HCl at 308K.
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,0.5,150.0,PDP,,,79.6,-479.0,149.0,92.0,160.0,Table 5: 150ppm in 1M HCl at 308K.
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,0.5,200.0,PDP,,,87.4,-487.0,92.0,71.0,172.0,Table 5: 200ppm in 1M HCl at 308K.
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,0.5,0.0,EIS,,,0.0,,,,Table 4: EIS blank. Rct=17.2 ohm.cm2.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,0.5,50.0,EIS,,,61.4,,,,Table 4: EIS 50ppm. Rct=38.6 ohm.cm2.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,0.5,100.0,EIS,,,77.1,,,,Table 4: EIS 100ppm. Rct=65.3 ohm.cm2.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,0.5,150.0,EIS,,,80.3,,,,Table 4: EIS 150ppm. Rct=80.1 ohm.cm2.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,0.5,200.0,EIS,,,92.3,,,,Table 4: EIS 200ppm. Rct=205.0 ohm.cm2.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,3.0,0.0,Weight loss,,,0.0,,,,Fig 3a: Weight loss blank at 308K 3h immersion.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,3.0,25.0,Weight loss,,,56.0,,,,Fig 3a: Weight loss 25ppm at 308K. IE approx from figure.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,3.0,50.0,Weight loss,,,68.0,,,,Fig 3a: Weight loss 50ppm at 308K. IE approx from figure.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,3.0,100.0,Weight loss,,,78.0,,,,Fig 3a: Weight loss 100ppm at 308K. IE approx from figure.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,3.0,150.0,Weight loss,,,85.0,,,,Fig 3a: Weight loss 150ppm at 308K. IE approx from figure.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,3.0,200.0,Weight loss,,,92.0,,,,Fig 3a: Weight loss 200ppm at 308K. IE>90% at optimum.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,45.0,3.0,25.0,Weight loss,,,42.0,,,,Fig 3d: Temperature effect at 318K (45C) 25ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,45.0,3.0,50.0,Weight loss,,,55.0,,,,Fig 3d: Temperature effect at 318K (45C) 50ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,45.0,3.0,100.0,Weight loss,,,65.0,,,,Fig 3d: Temperature effect at 318K (45C) 100ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,45.0,3.0,150.0,Weight loss,,,72.0,,,,Fig 3d: Temperature effect at 318K (45C) 150ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,45.0,3.0,200.0,Weight loss,,,80.0,,,,Fig 3d: Temperature effect at 318K (45C) 200ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,55.0,3.0,25.0,Weight loss,,,35.0,,,,Fig 3d: Temperature effect at 328K (55C) 25ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,55.0,3.0,50.0,Weight loss,,,45.0,,,,Fig 3d: Temperature effect at 328K (55C) 50ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,55.0,3.0,100.0,Weight loss,,,55.0,,,,Fig 3d: Temperature effect at 328K (55C) 100ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,55.0,3.0,150.0,Weight loss,,,62.0,,,,Fig 3d: Temperature effect at 328K (55C) 150ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,55.0,3.0,200.0,Weight loss,,,70.0,,,,Fig 3d: Temperature effect at 328K (55C) 200ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,65.0,3.0,25.0,Weight loss,,,30.0,,,,Fig 3d: Temperature effect at 338K (65C) 25ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,65.0,3.0,50.0,Weight loss,,,38.0,,,,Fig 3d: Temperature effect at 338K (65C) 50ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,65.0,3.0,100.0,Weight loss,,,48.0,,,,Fig 3d: Temperature effect at 338K (65C) 100ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,65.0,3.0,150.0,Weight loss,,,55.0,,,,Fig 3d: Temperature effect at 338K (65C) 150ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,65.0,3.0,200.0,Weight loss,,,62.0,,,,Fig 3d: Temperature effect at 338K (65C) 200ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,12.0,200.0,Weight loss,,,93.5,,,,Fig 3c: Immersion time effect at 12h 200ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,24.0,200.0,Weight loss,,,94.5,,,,Fig 3c: Immersion time effect at 24h 200ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,48.0,200.0,Weight loss,,,95.0,,,,Fig 3c: Immersion time effect at 48h 200ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,72.0,200.0,Weight loss,,,95.5,,,,Fig 3c: Immersion time effect at 72h 200ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,96.0,200.0,Weight loss,,,96.0,,,,Fig 3c: Immersion time effect at 96h 200ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.0,35.0,168.0,200.0,Weight loss,,,96.5,,,,Fig 3c: Immersion time effect at 168h (7 days) 200ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,0.5,35.0,3.0,200.0,Weight loss,,,92.6,,,,Fig 3b: Acid concentration effect at 0.5M HCl 200ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,1.5,35.0,3.0,200.0,Weight loss,,,88.0,,,,Fig 3b: Acid concentration effect at 1.5M HCl 200ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,2.0,35.0,3.0,200.0,Weight loss,,,85.5,,,,Fig 3b: Acid concentration effect at 2.0M HCl 200ppm.,
+Singh_2016_AloeVera.pdf,Aloe vera extract,Aloe vera gel extract,mild steel,HCl,2.5,35.0,3.0,200.0,Weight loss,,,82.8,,,,Fig 3b: Acid concentration effect at 2.5M HCl 200ppm.,
+Quraishi_2010_H2SO4,Curry leaf extract,Murraya koenigii,mild steel,H2SO4,0.5,35.0,0.5,0.0,PDP,,,0.0,-480.0,1850.0,95.0,118,Blank in 0.5M H2SO4 at 308K. Values from Table 2.
+Quraishi_2010_H2SO4,Curry leaf extract,Murraya koenigii,mild steel,H2SO4,0.5,35.0,0.5,100.0,PDP,,,72.5,-465.0,508.0,78.0,105,100 ppm in 0.5M H2SO4. Mixed-type inhibitor.
+Quraishi_2010_H2SO4,Curry leaf extract,Murraya koenigii,mild steel,H2SO4,0.5,35.0,0.5,200.0,PDP,,,81.3,-458.0,346.0,72.0,98,200 ppm in 0.5M H2SO4.
+Quraishi_2010_H2SO4,Curry leaf extract,Murraya koenigii,mild steel,H2SO4,0.5,35.0,0.5,400.0,PDP,,,89.2,-450.0,200.0,65.0,92,400 ppm in 0.5M H2SO4.
+Quraishi_2010_H2SO4,Curry leaf extract,Murraya koenigii,mild steel,H2SO4,0.5,35.0,0.5,600.0,PDP,,,92.6,-445.0,137.0,60.0,88,600 ppm in 0.5M H2SO4. Near optimum concentration.
+Quraishi_2010_HCl,Curry leaf extract,Murraya koenigii,mild steel,HCl,1.0,35.0,0.5,0.0,PDP,,,0.0,-462.0,1420.0,88.0,112,Blank in 1M HCl at 308K. Values from Table 3.
+Quraishi_2010_HCl,Curry leaf extract,Murraya koenigii,mild steel,HCl,1.0,35.0,0.5,100.0,PDP,,,68.2,-455.0,452.0,75.0,102,100 ppm in 1M HCl.
+Quraishi_2010_HCl,Curry leaf extract,Murraya koenigii,mild steel,HCl,1.0,35.0,0.5,200.0,PDP,,,76.8,-448.0,329.0,70.0,95,200 ppm in 1M HCl.
+Quraishi_2010_HCl,Curry leaf extract,Murraya koenigii,mild steel,HCl,1.0,35.0,0.5,400.0,PDP,,,85.2,-442.0,210.0,62.0,88,400 ppm in 1M HCl.
+Quraishi_2010_HCl,Curry leaf extract,Murraya koenigii,mild steel,HCl,1.0,35.0,0.5,600.0,PDP,,,90.1,-435.0,141.0,58.0,82,600 ppm in 1M HCl.
+PSE_2023,Peanut shell extract,Arachis hypogaea,carbon steel,H2SO4,0.5,25.0,1.0,0.0,PDP,,,0.0,-485.0,420.0,62.0,115,Blank in 0.5M H2SO4 at 298K.
+PSE_2023,Peanut shell extract,Arachis hypogaea,carbon steel,H2SO4,0.5,25.0,1.0,50.0,PDP,,,65.0,-472.0,147.0,58.0,108,50 mg/L PSE.
+PSE_2023,Peanut shell extract,Arachis hypogaea,carbon steel,H2SO4,0.5,25.0,1.0,100.0,PDP,,,78.5,-465.0,90.0,55.0,102,100 mg/L PSE.
+PSE_2023,Peanut shell extract,Arachis hypogaea,carbon steel,H2SO4,0.5,25.0,1.0,200.0,PDP,,,88.2,-458.0,50.0,52.0,95,200 mg/L PSE.
+PSE_2023,Peanut shell extract,Arachis hypogaea,carbon steel,H2SO4,0.5,25.0,1.0,300.0,PDP,,,95.0,-450.0,21.0,48.0,88,300 mg/L PSE. Optimum concentration.

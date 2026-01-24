@@ -4,17 +4,22 @@
 Enhanced ML Training for Corrosion Inhibitor Prediction
 =======================================================
 
+Multi-target prediction system for green corrosion inhibitors:
+- Targets: IE%, Ecorr, Icorr
+- Inhibitors: Curry leaf, Peanut shell, Aloe vera
+- Acids: H2SO4, HCl
+
 Implements best practices from recent literature:
 - Gradient Boosting (Akrom et al. 2023 - best performer)
 - Ensemble methods for uncertainty quantification
-- Virtual sample generation via KDE (optional)
-- Both IE% and ln(Kads) as targets
+- Separate models for each target variable
 - Comprehensive cross-validation with GroupKFold
 
 References:
-- Akrom et al. (2023): GBR achieved R² > 0.90
+- Akrom et al. (2023): GBR achieved R2 > 0.90
 - Ma et al. (2023): Concentration as crucial feature
 - Haruna et al. (2024): Ensemble averaging methods
+- Singh et al. (2016): Aloe vera electrochemical data
 """
 
 from __future__ import annotations
@@ -69,16 +74,41 @@ FEATURE_COLS_NUM = [
     "temperature_C",
     "immersion_time_h",
     "inhibitor_conc_mg_L",
-    "log_conc_mg_L",           # New: log concentration
-    "temp_conc_interaction",   # New: interaction term
-    "acid_strength_norm",      # New: normalized acid strength
+    "log_conc_mg_L",           # Log concentration
+    "temp_conc_interaction",   # Interaction term
+    "acid_strength_norm",      # Normalized acid strength
+    "acid_type_encoded",       # NEW: Acid type (0=H2SO4, 1=HCl)
 ]
 
 FEATURE_COLS_CAT = [
     "inhibitor_name",
     "method",
+    "acid",                    # NEW: Include acid as categorical
 ]
 
+# Target definitions (Multi-target support)
+TARGETS = {
+    "IE": {
+        "column": "inhibition_efficiency_pct",
+        "description": "Inhibition Efficiency (%)",
+        "clip_range": (0, 100),
+        "unit": "%"
+    },
+    "Ecorr": {
+        "column": "Ecorr_mV",
+        "description": "Corrosion Potential",
+        "clip_range": (-1000, 500),
+        "unit": "mV vs SCE"
+    },
+    "Icorr": {
+        "column": "Icorr_uA_cm2",
+        "description": "Corrosion Current Density",
+        "clip_range": (0, 10000),
+        "unit": "uA/cm2"
+    }
+}
+
+# Primary target (for backwards compatibility)
 TARGET_IE = "inhibition_efficiency_pct"
 TARGET_KADS = "ln_Kads"  # Alternative target
 
@@ -86,6 +116,10 @@ TARGET_KADS = "ln_Kads"  # Alternative target
 print("="*80)
 print("ENHANCED ML TRAINING FOR CORROSION INHIBITOR PREDICTION")
 print("="*80)
+
+
+def to_ascii(text: str) -> str:
+    return text.encode("ascii", "ignore").decode("ascii")
 
 
 def make_onehot():
@@ -111,24 +145,29 @@ def load_preprocessed_data():
     return df_train, df_val, df_test
 
 
-def build_preprocessing_pipeline():
+def build_preprocessing_pipeline(feature_cols_num=None, feature_cols_cat=None):
     """Build preprocessing pipeline for features."""
-    
+
+    if feature_cols_num is None:
+        feature_cols_num = FEATURE_COLS_NUM
+    if feature_cols_cat is None:
+        feature_cols_cat = FEATURE_COLS_CAT
+
     numeric_pipeline = Pipeline([
         ("imputer", SimpleImputer(strategy="median")),
         ("scaler", StandardScaler()),
     ])
-    
+
     categorical_pipeline = Pipeline([
         ("imputer", SimpleImputer(strategy="most_frequent")),
         ("onehot", make_onehot()),
     ])
-    
+
     preprocessor = ColumnTransformer([
-        ("num", numeric_pipeline, FEATURE_COLS_NUM),
-        ("cat", categorical_pipeline, FEATURE_COLS_CAT),
+        ("num", numeric_pipeline, feature_cols_num),
+        ("cat", categorical_pipeline, feature_cols_cat),
     ])
-    
+
     return preprocessor
 
 
@@ -220,16 +259,34 @@ def train_and_evaluate_model(model, X_train, y_train, X_val, y_val, groups_train
         "val_rmse": np.sqrt(mean_squared_error(y_val, y_val_pred)),
     }
     
-    # Cross-validation with GroupKFold
-    print("   Running group-based cross-validation...")
-    cv = GroupKFold(n_splits=min(5, len(np.unique(groups_train))))
-    cv_scores = cross_val_score(
-        model, X_train, y_train, 
-        groups=groups_train, 
-        cv=cv, 
-        scoring="r2",
-        n_jobs=-1
-    )
+    # Cross-validation with GroupKFold (or regular KFold if only 1 group)
+    n_groups = len(np.unique(groups_train))
+    if n_groups >= 2:
+        print("   Running group-based cross-validation...")
+        cv = GroupKFold(n_splits=min(5, n_groups))
+        cv_scores = cross_val_score(
+            model, X_train, y_train,
+            groups=groups_train,
+            cv=cv,
+            scoring="r2",
+            n_jobs=-1
+        )
+    else:
+        # Fallback to regular KFold when only 1 group
+        print("   Running standard cross-validation (single group detected)...")
+        from sklearn.model_selection import KFold
+        n_splits = min(5, len(y_train))
+        if n_splits >= 2:
+            cv = KFold(n_splits=n_splits, shuffle=True, random_state=RANDOM_STATE)
+            cv_scores = cross_val_score(
+                model, X_train, y_train,
+                cv=cv,
+                scoring="r2",
+                n_jobs=-1
+            )
+        else:
+            # Not enough samples for CV
+            cv_scores = np.array([metrics["train_r2"]])
     
     metrics["cv_r2_mean"] = cv_scores.mean()
     metrics["cv_r2_std"] = cv_scores.std()
@@ -438,6 +495,7 @@ def plot_concentration_response_curves(model, preprocessor, df_val, output_path)
         
         for conc in conc_range:
             # Create prediction input
+            acid_encoding = {"H2SO4": 0, "HCl": 1, "HNO3": 2}
             pred_input = pd.DataFrame([{
                 **standard_conditions,
                 "inhibitor_name": inhibitor,
@@ -445,6 +503,7 @@ def plot_concentration_response_curves(model, preprocessor, df_val, output_path)
                 "log_conc_mg_L": np.log10(conc + 1e-3),
                 "temp_conc_interaction": standard_conditions["temperature_C"] * conc / 1000.0,
                 "acid_strength_norm": standard_conditions["acid_molarity_M"] / 0.5,
+                "acid_type_encoded": acid_encoding.get(standard_conditions["acid"], 0),
             }])
             
             # IMPORTANT: Preprocess the input before prediction
@@ -514,30 +573,175 @@ def generate_prediction_intervals(models_list, X, n_bootstrap=100):
     return mean_pred, lower_bound, upper_bound, std_pred
 
 
-def save_model_and_results(model, preprocessor, metrics, importance_df, model_name="best_model"):
+def save_model_and_results(model, preprocessor, metrics, importance_df, model_name="best_model", target_name="IE"):
     """Save trained model, preprocessor, and results."""
-    print(f"\n💾 Saving model and results...")
-    
+    print(f"\n[SAVE] Saving model and results for {target_name}...")
+
     # Save model
-    model_path = OUTPUT_DIR / f"{model_name}_model.pkl"
+    model_path = OUTPUT_DIR / f"{model_name}_{target_name}_model.pkl"
     joblib.dump(model, model_path)
-    print(f"   ✓ Model: {model_path}")
-    
-    # Save preprocessor
+    print(f"   OK: Model: {model_path}")
+
+    # Save preprocessor (always save fresh to ensure consistency)
     prep_path = OUTPUT_DIR / f"{model_name}_preprocessor.pkl"
     joblib.dump(preprocessor, prep_path)
-    print(f"   ✓ Preprocessor: {prep_path}")
-    
+    print(f"   OK: Preprocessor: {prep_path}")
+
     # Save metrics
     metrics_df = pd.DataFrame([metrics])
-    metrics_path = OUTPUT_DIR / f"{model_name}_metrics.csv"
+    metrics_path = OUTPUT_DIR / f"{model_name}_{target_name}_metrics.csv"
     metrics_df.to_csv(metrics_path, index=False)
-    print(f"   ✓ Metrics: {metrics_path}")
-    
+    print(f"   OK: Metrics: {metrics_path}")
+
     # Save feature importance
-    importance_path = OUTPUT_DIR / f"{model_name}_feature_importance.csv"
-    importance_df.to_csv(importance_path, index=False)
-    print(f"   ✓ Feature importance: {importance_path}")
+    if importance_df is not None:
+        importance_path = OUTPUT_DIR / f"{model_name}_{target_name}_feature_importance.csv"
+        importance_df.to_csv(importance_path, index=False)
+        print(f"   OK: Feature importance: {importance_path}")
+
+
+def train_single_target(df_train, df_val, df_test, target_name, target_info, preprocessor=None):
+    """
+    Train models for a single target variable.
+
+    Args:
+        df_train, df_val, df_test: DataFrames with train/val/test data
+        target_name: Short name for target (e.g., "IE", "Ecorr", "Icorr")
+        target_info: Dict with column name, description, clip_range, unit
+        preprocessor: Pre-fitted preprocessor (optional)
+
+    Returns:
+        best_model, preprocessor, metrics, importance_df
+    """
+    target_col = target_info["column"]
+    clip_range = target_info["clip_range"]
+    description = target_info["description"]
+    unit = target_info["unit"]
+
+    print("\n" + "="*80)
+    print(f"TRAINING MODELS FOR: {description} ({target_name})")
+    print("="*80)
+
+    # Filter to rows with valid target data
+    train_valid = df_train[df_train[target_col].notna()].copy()
+    val_valid = df_val[df_val[target_col].notna()].copy()
+    test_valid = df_test[df_test[target_col].notna()].copy()
+
+    print(f"\n[INFO] Data with valid {target_name} values:")
+    print(f"   Train: {len(train_valid)} / {len(df_train)} rows")
+    print(f"   Val:   {len(val_valid)} / {len(df_val)} rows")
+    print(f"   Test:  {len(test_valid)} / {len(df_test)} rows")
+
+    if len(train_valid) < 10:
+        print(f"\n[WARN] Insufficient data for {target_name}. Skipping...")
+        return None, None, None, None
+
+    # Prepare features and target
+    X_train = train_valid[FEATURE_COLS_NUM + FEATURE_COLS_CAT]
+    y_train = train_valid[target_col]
+    groups_train = train_valid["paper_id"]
+
+    X_val = val_valid[FEATURE_COLS_NUM + FEATURE_COLS_CAT]
+    y_val = val_valid[target_col]
+
+    X_test = test_valid[FEATURE_COLS_NUM + FEATURE_COLS_CAT]
+    y_test = test_valid[target_col]
+
+    # Build or use existing preprocessor
+    if preprocessor is None:
+        preprocessor = build_preprocessing_pipeline()
+        X_train_prep = preprocessor.fit_transform(X_train)
+    else:
+        X_train_prep = preprocessor.transform(X_train)
+
+    X_val_prep = preprocessor.transform(X_val)
+    X_test_prep = preprocessor.transform(X_test)
+
+    # Get feature names
+    feature_names_num = FEATURE_COLS_NUM
+    try:
+        feature_names_cat = preprocessor.named_transformers_["cat"]["onehot"]\
+            .get_feature_names_out(FEATURE_COLS_CAT).tolist()
+    except:
+        feature_names_cat = []
+    feature_names = feature_names_num + feature_names_cat
+
+    print(f"\n[INFO] Preprocessed features: {len(feature_names)} total")
+
+    # Create and train models
+    models_dict = create_models()
+    all_metrics = {}
+    trained_models = {}
+
+    for model_name, base_model in models_dict.items():
+        model_pipeline = Pipeline([("model", base_model)])
+
+        trained_model, metrics, cv_scores = train_and_evaluate_model(
+            model_pipeline,
+            X_train_prep, y_train,
+            X_val_prep, y_val,
+            groups_train,
+            model_name=model_name
+        )
+
+        all_metrics[model_name] = metrics
+        trained_models[model_name] = trained_model
+
+    # Create ensemble
+    print("\n[INFO] Creating ensemble model...")
+    ensemble_estimators = [
+        ("gb", trained_models["GradientBoosting"].named_steps["model"]),
+        ("hgb", trained_models["HistGradientBoosting"].named_steps["model"]),
+        ("rf", trained_models["RandomForest"].named_steps["model"]),
+    ]
+    ensemble = VotingRegressor(estimators=ensemble_estimators)
+    ensemble.fit(X_train_prep, y_train)
+
+    ensemble_pipeline = Pipeline([("model", ensemble)])
+    _, ensemble_metrics, _ = train_and_evaluate_model(
+        ensemble_pipeline,
+        X_train_prep, y_train,
+        X_val_prep, y_val,
+        groups_train,
+        model_name="Ensemble"
+    )
+    all_metrics["Ensemble"] = ensemble_metrics
+    trained_models["Ensemble"] = ensemble_pipeline
+
+    # Select best model
+    comparison_df = pd.DataFrame(all_metrics).T
+    comparison_df = comparison_df.sort_values("val_r2", ascending=False)
+    best_model_name = comparison_df.index[0]
+    best_model = trained_models[best_model_name]
+
+    print(f"\n[RESULT] Best model for {target_name}: {best_model_name}")
+    print(f"   Val R2: {comparison_df.loc[best_model_name, 'val_r2']:.4f}")
+    print(f"   Val MAE: {comparison_df.loc[best_model_name, 'val_mae']:.2f} {unit}")
+
+    # Feature importance
+    importance_df = analyze_feature_importance(best_model, feature_names, X_val_prep, y_val)
+
+    # Final test evaluation
+    y_test_pred = np.clip(best_model.predict(X_test_prep), clip_range[0], clip_range[1])
+    test_r2 = r2_score(y_test, y_test_pred)
+    test_mae = mean_absolute_error(y_test, y_test_pred)
+    test_rmse = np.sqrt(mean_squared_error(y_test, y_test_pred))
+
+    final_metrics = {
+        "target": target_name,
+        "best_model": best_model_name,
+        "test_r2": test_r2,
+        "test_mae": test_mae,
+        "test_rmse": test_rmse,
+        **all_metrics[best_model_name]
+    }
+
+    print(f"\n[TEST] Final Test Performance for {target_name}:")
+    print(f"   Test R2:   {test_r2:.4f}")
+    print(f"   Test MAE:  {test_mae:.2f} {unit}")
+    print(f"   Test RMSE: {test_rmse:.2f} {unit}")
+
+    return best_model, preprocessor, final_metrics, importance_df, y_test, y_test_pred
 
 
 def create_model_comparison_report(all_metrics):
@@ -567,30 +771,178 @@ def create_model_comparison_report(all_metrics):
 
 
 def main():
-    """Main training pipeline."""
-    
+    """Main training pipeline with multi-target support."""
+
+    print("\n" + "="*80)
+    print("MULTI-TARGET ML TRAINING FOR CORROSION INHIBITOR PREDICTION")
+    print("Targets: IE%, Ecorr, Icorr")
+    print("="*80)
+
     # 1. Load data
     df_train, df_val, df_test = load_preprocessed_data()
-    
+
+    # 2. Build preprocessing pipeline (fit once on full feature set)
+    print("\n[INFO] Building preprocessing pipeline...")
+    X_train_all = df_train[FEATURE_COLS_NUM + FEATURE_COLS_CAT]
+    preprocessor = build_preprocessing_pipeline()
+    preprocessor.fit(X_train_all)
+    print("   OK: Preprocessor fitted on training data")
+
+    # 3. Train models for each target
+    all_target_results = {}
+    all_models = {}
+
+    for target_name, target_info in TARGETS.items():
+        result = train_single_target(
+            df_train, df_val, df_test,
+            target_name, target_info,
+            preprocessor=preprocessor
+        )
+
+        if result[0] is not None:
+            best_model, _, metrics, importance_df, y_test, y_test_pred = result
+            all_target_results[target_name] = {
+                "metrics": metrics,
+                "importance": importance_df,
+                "y_test": y_test,
+                "y_pred": y_test_pred
+            }
+            all_models[target_name] = best_model
+
+            # Save model and results
+            save_model_and_results(
+                best_model, preprocessor, metrics, importance_df,
+                model_name="best_model", target_name=target_name
+            )
+
+            # Generate visualizations
+            clip_range = target_info["clip_range"]
+            unit = target_info["unit"]
+
+            plot_predictions_vs_actual(
+                y_test, y_test_pred, f"Test Set ({target_name})",
+                FIGURES_DIR / f"predictions_vs_actual_{target_name}.png"
+            )
+
+            if importance_df is not None:
+                plot_feature_importance(
+                    importance_df,
+                    FIGURES_DIR / f"feature_importance_{target_name}.png"
+                )
+
+    # 4. Generate concentration-response curves for IE%
+    if "IE" in all_models:
+        print("\n[INFO] Generating concentration-response curves...")
+        plot_concentration_response_curves(
+            all_models["IE"], preprocessor, df_val,
+            FIGURES_DIR / "concentration_response_curves.png"
+        )
+
+    # 5. Create final summary report
+    create_multi_target_report(all_target_results)
+
+    print("\n" + "="*80)
+    print("TRAINING COMPLETE!")
+    print("="*80)
+    print(f"\nOutput directories:")
+    print(f"  Models:  {OUTPUT_DIR.absolute()}")
+    print(f"  Figures: {FIGURES_DIR.absolute()}")
+    print("\nModels trained:")
+    for target_name in all_models.keys():
+        print(f"  - best_model_{target_name}_model.pkl")
+    print("\n" + "="*80 + "\n")
+
+
+def create_multi_target_report(all_target_results):
+    """Create summary report for all targets."""
+
+    print("\n" + "="*80)
+    print("MULTI-TARGET TRAINING SUMMARY")
+    print("="*80)
+
+    report = f"""
+{'='*80}
+MULTI-TARGET CORROSION INHIBITOR ML - FINAL REPORT
+{'='*80}
+
+Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}
+Targets: {', '.join(all_target_results.keys())}
+
+{'='*80}
+PERFORMANCE SUMMARY BY TARGET
+{'='*80}
+"""
+
+    for target_name, results in all_target_results.items():
+        metrics = results["metrics"]
+        report += f"""
+{target_name} ({TARGETS[target_name]['description']}):
+  Best Model: {metrics['best_model']}
+  Test R2:    {metrics['test_r2']:.4f}
+  Test MAE:   {metrics['test_mae']:.2f} {TARGETS[target_name]['unit']}
+  Test RMSE:  {metrics['test_rmse']:.2f} {TARGETS[target_name]['unit']}
+  Val R2:     {metrics['val_r2']:.4f}
+"""
+
+    report += f"""
+{'='*80}
+FILES GENERATED
+{'='*80}
+
+Models:
+"""
+    for target_name in all_target_results.keys():
+        report += f"  - best_model_{target_name}_model.pkl\n"
+
+    report += """  - best_model_preprocessor.pkl
+
+Figures:
+"""
+    for target_name in all_target_results.keys():
+        report += f"  - predictions_vs_actual_{target_name}.png\n"
+        report += f"  - feature_importance_{target_name}.png\n"
+
+    report += """  - concentration_response_curves.png
+
+{'='*80}
+END OF REPORT
+{'='*80}
+"""
+
+    # Save report
+    report = to_ascii(report)
+    with open(OUTPUT_DIR / "MULTI_TARGET_TRAINING_REPORT.txt", "w", encoding="ascii") as f:
+        f.write(report)
+
+    print(f"\n[SAVE] Report saved: {OUTPUT_DIR / 'MULTI_TARGET_TRAINING_REPORT.txt'}")
+    print(report)
+
+
+def main_legacy():
+    """Legacy main function for single-target (IE%) training."""
+
+    # 1. Load data
+    df_train, df_val, df_test = load_preprocessed_data()
+
     # 2. Prepare features and target
     X_train = df_train[FEATURE_COLS_NUM + FEATURE_COLS_CAT]
     y_train = df_train[TARGET_IE]
     groups_train = df_train["paper_id"]
-    
+
     X_val = df_val[FEATURE_COLS_NUM + FEATURE_COLS_CAT]
     y_val = df_val[TARGET_IE]
-    
+
     X_test = df_test[FEATURE_COLS_NUM + FEATURE_COLS_CAT]
     y_test = df_test[TARGET_IE]
-    
+
     # 3. Build preprocessing pipeline
     preprocessor = build_preprocessing_pipeline()
-    
+
     # Fit preprocessor and transform data
     X_train_prep = preprocessor.fit_transform(X_train)
     X_val_prep = preprocessor.transform(X_val)
     X_test_prep = preprocessor.transform(X_test)
-    
+
     # Get feature names after preprocessing
     feature_names_num = FEATURE_COLS_NUM
     try:
@@ -599,21 +951,21 @@ def main():
     except:
         feature_names_cat = []
     feature_names = feature_names_num + feature_names_cat
-    
-    print(f"\n✓ Preprocessed features: {len(feature_names)} total")
-    
+
+    print(f"\n[INFO] Preprocessed features: {len(feature_names)} total")
+
     # 4. Create and train models
     models_dict = create_models()
-    
+
     all_metrics = {}
     trained_models = {}
-    
+
     for model_name, base_model in models_dict.items():
         # Create full pipeline
         model_pipeline = Pipeline([
             ("model", base_model)
         ])
-        
+
         # Train and evaluate
         trained_model, metrics, cv_scores = train_and_evaluate_model(
             model_pipeline,
@@ -622,10 +974,10 @@ def main():
             groups_train,
             model_name=model_name
         )
-        
+
         all_metrics[model_name] = metrics
         trained_models[model_name] = trained_model
-    
+
     # 5. Create ensemble
     print("\n" + "="*80)
     ensemble_estimators = [
@@ -868,7 +1220,8 @@ END OF REPORT
 """
     
     # Save report
-    with open(OUTPUT_DIR / "TRAINING_REPORT.txt", "w") as f:
+    report = to_ascii(report)
+    with open(OUTPUT_DIR / "TRAINING_REPORT.txt", "w", encoding="ascii") as f:
         f.write(report)
     
     print(f"\n✓ Saved: {OUTPUT_DIR / 'TRAINING_REPORT.txt'}")

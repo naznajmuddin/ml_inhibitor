@@ -1,6 +1,0 @@
-inhibitor_name,inhibitor_conc_mg_L,temperature_C,acid_molarity_M,immersion_time_h,acid,steel_grade,method
-Curry leaf extract,1000,25,0.5,6,H2SO4,ASTM A36,Weight loss
-Peanut shell extract,500,30,0.5,12,H2SO4,mild steel,Weight loss
-Spinach leaf extract,1500,25,0.5,24,H2SO4,carbon steel,Weight loss
-Reed leaves extract,800,35,0.5,6,H2SO4,mild steel,Weight loss
-New inhibitor test,2000,25,0.5,6,H2SO4,ASTM A36,Weight loss

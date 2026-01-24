@@ -1,0 +1,55 @@
+
+================================================================================
+MULTI-TARGET CORROSION INHIBITOR ML - FINAL REPORT
+================================================================================
+
+Date: 2026-01-24 11:00:30
+Targets: IE, Ecorr, Icorr
+
+================================================================================
+PERFORMANCE SUMMARY BY TARGET
+================================================================================
+
+IE (Inhibition Efficiency (%)):
+  Best Model: SVR
+  Test R2:    0.9749
+  Test MAE:   2.45 %
+  Test RMSE:  3.42 %
+  Val R2:     0.7737
+
+Ecorr (Corrosion Potential):
+  Best Model: GradientBoosting
+  Test R2:    -1.3051
+  Test MAE:   12.89 mV vs SCE
+  Test RMSE:  14.32 mV vs SCE
+  Val R2:     -0.5532
+
+Icorr (Corrosion Current Density):
+  Best Model: Ridge
+  Test R2:    0.5598
+  Test MAE:   77.13 uA/cm2
+  Test RMSE:  89.23 uA/cm2
+  Val R2:     0.1941
+
+================================================================================
+FILES GENERATED
+================================================================================
+
+Models:
+  - best_model_IE_model.pkl
+  - best_model_Ecorr_model.pkl
+  - best_model_Icorr_model.pkl
+  - best_model_preprocessor.pkl
+
+Figures:
+  - predictions_vs_actual_IE.png
+  - feature_importance_IE.png
+  - predictions_vs_actual_Ecorr.png
+  - feature_importance_Ecorr.png
+  - predictions_vs_actual_Icorr.png
+  - feature_importance_Icorr.png
+  - concentration_response_curves.png
+
+{'='*80}
+END OF REPORT
+{'='*80}

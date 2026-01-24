@@ -1,0 +1,17 @@
+feature,importance,std
+acid_molarity_M,0.0,0.0
+temperature_C,0.0,0.0
+immersion_time_h,0.0,0.0
+inhibitor_conc_mg_L,0.0,0.0
+log_conc_mg_L,0.0,0.0
+temp_conc_interaction,0.0,0.0
+acid_strength_norm,0.0,0.0
+acid_type_encoded,0.0,0.0
+inhibitor_name_Aloe vera extract,0.0,0.0
+inhibitor_name_Curry leaf extract,0.0,0.0
+inhibitor_name_Peanut shell extract,0.0,0.0
+method_EIS,0.0,0.0
+method_PDP,0.0,0.0
+method_Weight loss,0.0,0.0
+acid_H2SO4,0.0,0.0
+acid_HCl,0.0,0.0

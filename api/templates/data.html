@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dataset | Corrosion Inhibitor Predictor</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <nav class="top-nav">
+          <a class="nav-link" href="/">Predict</a>
+          <a class="nav-link" href="/data">Dataset</a>
+          <a class="nav-link" href="/graphs">Graphs</a>
+        </nav>
+        <p class="badge">Dataset Viewer</p>
+        <h1>Corrosion Inhibitors Dataset</h1>
+        <p class="subhead">
+          Browse the full dataset used for predictions. Use the graph gallery for visuals.
+        </p>
+      </header>
+
+      <main class="content single">
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <h2>Dataset rows</h2>
+              {% if row_count is not none %}
+              <p class="muted">Total rows: {{ row_count }}</p>
+              {% endif %}
+            </div>
+            <a class="secondary" href="/graphs">View graphs</a>
+          </div>
+
+          {% if error %}
+          <div class="alert">
+            <p>{{ error }}</p>
+          </div>
+          {% else %}
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  {% for column in columns %}
+                  <th>{{ column }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in rows %}
+                <tr>
+                  {% for value in row %}
+                  <td>{{ value }}</td>
+                  {% endfor %}
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>Need a prediction instead? Visit the predictor page.</p>
+      </footer>
+    </div>
+  </body>
+</html>

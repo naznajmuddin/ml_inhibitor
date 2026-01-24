@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Corrosion Inhibitor Predictor</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <nav class="top-nav">
+          <a class="nav-link" href="/">Predict</a>
+          <a class="nav-link" href="/data">Dataset</a>
+          <a class="nav-link" href="/graphs">Graphs</a>
+        </nav>
+        <p class="badge">ML Prediction Tool</p>
+        <h1>Corrosion Inhibitor<br />Efficiency Predictor</h1>
+        <p class="subhead">
+          Enter your experimental conditions to estimate inhibition efficiency and uncertainty.
+        </p>
+      </header>
+
+      <main class="content">
+        <section class="card form-card">
+          <h2>Experiment Details</h2>
+          <div class="quick-fill">
+            <div>
+              <label>
+                Example preset
+                <select id="preset-select">
+                  <option value="">Select a preset</option>
+                  <option value="preset-curry">Curry leaf extract (H2SO4, 25 C)</option>
+                  <option value="preset-peanut">Peanut shell extract (H2SO4, 25 C)</option>
+                  <option value="preset-aloe">Aloe vera extract (HCl, 35 C)</option>
+                </select>
+              </label>
+            </div>
+            <div>
+              <label>
+                Dataset sample
+                <div class="inline-controls">
+                  <select id="dataset-select">
+                    <option value="">Load samples to choose</option>
+                  </select>
+                  <button type="button" id="load-samples" class="secondary">Load</button>
+                </div>
+              </label>
+            </div>
+          </div>
+          <form action="/predict/ui" method="post">
+            <div class="grid">
+              <label>
+                Inhibitor name
+                <select name="inhibitor_name" required>
+                  <option value="Curry leaf extract" {% if defaults.get('inhibitor_name') == 'Curry leaf extract' %}selected{% endif %}>
+                    Curry leaf extract
+                  </option>
+                  <option value="Peanut shell extract" {% if defaults.get('inhibitor_name') == 'Peanut shell extract' %}selected{% endif %}>
+                    Peanut shell extract
+                  </option>
+                  <option value="Aloe vera extract" {% if defaults.get('inhibitor_name') == 'Aloe vera extract' %}selected{% endif %}>
+                    Aloe vera extract
+                  </option>
+                </select>
+              </label>
+
+              <label>
+                Method
+                <select name="method" required>
+                  <option value="Weight loss" {% if defaults.get('method') == 'Weight loss' %}selected{% endif %}>
+                    Weight loss
+                  </option>
+                  <option value="PDP" {% if defaults.get('method') == 'PDP' %}selected{% endif %}>
+                    PDP
+                  </option>
+                  <option value="EIS" {% if defaults.get('method') == 'EIS' %}selected{% endif %}>
+                    EIS
+                  </option>
+                </select>
+              </label>
+
+              <label>
+                Acid type
+                <select name="acid" required>
+                  <option value="H2SO4" {% if defaults.get('acid') == 'H2SO4' %}selected{% endif %}>
+                    H2SO4
+                  </option>
+                  <option value="HCl" {% if defaults.get('acid') == 'HCl' %}selected{% endif %}>
+                    HCl
+                  </option>
+                </select>
+              </label>
+
+              <label>
+                Acid molarity (M)
+                <input
+                  type="number"
+                  name="acid_molarity_M"
+                  step="0.01"
+                  min="0"
+                  value="{{ defaults.get('acid_molarity_M', '') }}"
+                  placeholder="1.0"
+                  required
+                />
+              </label>
+
+              <label>
+                Temperature (C)
+                <input
+                  type="number"
+                  name="temperature_C"
+                  step="0.1"
+                  value="{{ defaults.get('temperature_C', '') }}"
+                  placeholder="25"
+                  required
+                />
+              </label>
+
+              <label>
+                Immersion time (hours)
+                <input
+                  type="number"
+                  name="immersion_time_h"
+                  step="0.1"
+                  min="0"
+                  value="{{ defaults.get('immersion_time_h', '') }}"
+                  placeholder="1"
+                  required
+                />
+              </label>
+
+              <label>
+                Inhibitor concentration (mg/L)
+                <input
+                  type="number"
+                  name="inhibitor_conc_mg_L"
+                  step="1"
+                  min="0"
+                  value="{{ defaults.get('inhibitor_conc_mg_L', '') }}"
+                  placeholder="500"
+                  required
+                />
+              </label>
+            </div>
+
+            <button type="submit" class="primary">Predict efficiency</button>
+          </form>
+        </section>
+
+        <section class="card result-card">
+          <h2>Prediction</h2>
+
+          {% if error %}
+          <div class="alert">
+            <p>We could not process that request.</p>
+            <p class="muted">{{ error }}</p>
+          </div>
+          {% elif result %}
+          <div class="result">
+            <p class="label">Predicted inhibition efficiency</p>
+            <p class="value">{{ '%.1f'|format(result.predicted_IE_pct) }}%</p>
+            <p class="muted">
+              Uncertainty: {{ '%.1f'|format(result.uncertainty_lower) }}% to
+              {{ '%.1f'|format(result.uncertainty_upper) }}%
+            </p>
+          </div>
+          <div class="summary">
+            <h3>Inputs used</h3>
+            <ul>
+              <li>{{ result.input.inhibitor_name }}</li>
+              <li>{{ result.input.method }}</li>
+              <li>{{ result.input.acid_molarity_M }} M {{ result.input.acid }}</li>
+              <li>{{ result.input.temperature_C }} C</li>
+              <li>{{ result.input.immersion_time_h }} hours</li>
+              <li>{{ result.input.inhibitor_conc_mg_L }} mg/L</li>
+            </ul>
+          </div>
+          {% else %}
+          <p class="muted">
+            Submit the form to see a prediction. The model is trained on curry leaf,
+            peanut shell, and aloe vera extracts.
+          </p>
+          {% endif %}
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>Results are model estimates for research guidance.</p>
+      </footer>
+    </div>
+    <script>
+      const presetMap = {
+        "preset-curry": {
+          inhibitor_name: "Curry leaf extract",
+          method: "Weight loss",
+          acid: "H2SO4",
+          acid_molarity_M: "2.0",
+          temperature_C: "25",
+          immersion_time_h: "6",
+          inhibitor_conc_mg_L: "500",
+        },
+        "preset-peanut": {
+          inhibitor_name: "Peanut shell extract",
+          method: "Weight loss",
+          acid: "H2SO4",
+          acid_molarity_M: "0.5",
+          temperature_C: "25",
+          immersion_time_h: "1",
+          inhibitor_conc_mg_L: "500",
+        },
+        "preset-aloe": {
+          inhibitor_name: "Aloe vera extract",
+          method: "Weight loss",
+          acid: "HCl",
+          acid_molarity_M: "1.0",
+          temperature_C: "35",
+          immersion_time_h: "3",
+          inhibitor_conc_mg_L: "500",
+        },
+      };
+
+      const presetSelect = document.getElementById("preset-select");
+      const datasetSelect = document.getElementById("dataset-select");
+      const loadSamplesBtn = document.getElementById("load-samples");
+
+      function setField(name, value) {
+        const field = document.querySelector(`[name="${name}"]`);
+        if (!field) return;
+        field.value = value;
+      }
+
+      function applyValues(values) {
+        Object.entries(values).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            setField(key, value);
+          }
+        });
+      }
+
+      presetSelect?.addEventListener("change", (event) => {
+        const selection = presetMap[event.target.value];
+        if (selection) {
+          applyValues(selection);
+        }
+      });
+
+      loadSamplesBtn?.addEventListener("click", async () => {
+        datasetSelect.disabled = true;
+        loadSamplesBtn.disabled = true;
+        loadSamplesBtn.textContent = "Loading...";
+
+        try {
+          const response = await fetch("/api/samples");
+          const data = await response.json();
+
+          if (!response.ok || data.error) {
+            throw new Error(data.error || "Unable to load samples");
+          }
+
+          datasetSelect.innerHTML = "<option value=\"\">Select a dataset row</option>";
+          data.samples.forEach((sample, index) => {
+            const option = document.createElement("option");
+            option.value = String(index);
+            option.textContent = `${sample.inhibitor_name} | ${sample.acid} ${sample.acid_molarity_M} M | ${sample.temperature_C} C`;
+            option.dataset.payload = JSON.stringify(sample);
+            datasetSelect.appendChild(option);
+          });
+          datasetSelect.disabled = false;
+        } catch (error) {
+          datasetSelect.innerHTML = "<option value=\"\">Sample load failed</option>";
+          datasetSelect.disabled = true;
+          console.error(error);
+          alert("Could not load dataset samples. Please try again.");
+        } finally {
+          loadSamplesBtn.disabled = false;
+          loadSamplesBtn.textContent = "Load";
+        }
+      });
+
+      datasetSelect?.addEventListener("change", (event) => {
+        const option = event.target.selectedOptions[0];
+        if (!option || !option.dataset.payload) return;
+        try {
+          const payload = JSON.parse(option.dataset.payload);
+          applyValues(payload);
+        } catch (error) {
+          console.error(error);
+        }
+      });
+    </script>
+  </body>
+</html>
