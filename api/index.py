@@ -7,6 +7,9 @@ import numpy as np
 import pandas as pd
 from flask import Flask, jsonify, render_template, request, send_from_directory, url_for
 from scipy import stats
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
 
 app = Flask(__name__)
 
@@ -59,8 +62,33 @@ def load_model_and_preprocessor():
     if _model is None or _preprocessor is None:
         _model = joblib.load(MODEL_PATH)
         _preprocessor = joblib.load(PREP_PATH)
+        ensure_imputer_compat(_preprocessor)
 
     return _model, _preprocessor
+
+
+def ensure_imputer_compat(transformer):
+    """Patch legacy SimpleImputer objects for newer sklearn runtimes."""
+
+    if isinstance(transformer, SimpleImputer):
+        if not hasattr(transformer, "_fill_dtype"):
+            if hasattr(transformer, "_fit_dtype"):
+                transformer._fill_dtype = transformer._fit_dtype
+            elif hasattr(transformer, "statistics_"):
+                transformer._fill_dtype = transformer.statistics_.dtype
+        return
+
+    if isinstance(transformer, Pipeline):
+        for _, step in transformer.steps:
+            ensure_imputer_compat(step)
+        return
+
+    if isinstance(transformer, ColumnTransformer):
+        transformers = getattr(transformer, "transformers_", transformer.transformers)
+        for _, trans, _ in transformers:
+            if trans in ("drop", "passthrough"):
+                continue
+            ensure_imputer_compat(trans)
 
 
 def format_value(value):
